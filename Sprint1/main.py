@@ -55,7 +55,7 @@ def remove_investment():
     else:
         print("Investment invalid selection \n")
 
-def view_balance():
+def view_balance(): 
 
     if not portfolio:
         print("Your portfolio is empty \n")
