@@ -1,4 +1,5 @@
 import customtkinter
+from datetime import datetime
 from menu import InvestmentMenu
 from investment import InvestmentApp
 
@@ -8,10 +9,11 @@ class SmartInvestmentApp:
         self.app.title("SMART INVESTMENTS")
         self.app.geometry("1400x1000")
         self.portfolio = []
+        self.history = []
 
         customtkinter.set_appearance_mode("Light")
+        self.app.configure(fg_color="#F7E7CE")  
 
-        self.app.configure(fg_color="#F7E7CE")
         self.operate_menu()
 
     def clear_window(self):
@@ -33,3 +35,5 @@ class SmartInvestmentApp:
 if __name__ == "__main__":
     app = SmartInvestmentApp()
     app.start()
+
+    
