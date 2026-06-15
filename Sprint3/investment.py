@@ -54,7 +54,7 @@ class InvestmentApp:
         returns = []
 
         for investment in self.portfolio:
-            future_value = investment.calculate_return()
+            future_value = investment.calculate_return(investment.years)
             returns.append(
                 f"{investment.name}: ${future_value:,.2f}"
             )

@@ -29,6 +29,10 @@ class InvestmentMenu:
         canvas.draw()
         canvas.get_tk_widget().pack(fill="both", expand=True)
 
+    def update_balance(self):
+        balance = sum(inv.amount for inv in self.controller.portfolio)
+        self.accountbalance.configure(text=f"Account Balance: ${balance:,.2f}")
+
     def menuGui(self):
         self.controller.clear_window()
         date = datetime.now().strftime("%A, %d %B %Y")
@@ -55,9 +59,14 @@ class InvestmentMenu:
         individualstocks_button = customtkinter.CTkButton(right_frame,text="Stock Market", fg_color="#06402B", height=100)
         individualstocks_button.grid(row=4, column=0, padx=20, pady=10, sticky="ew")
 
+        self.accountbalance = customtkinter.CTkLabel(self.left_frame, text="Account Balance: $0.00", font=("Banschrift", 16))
+        self.accountbalance.grid(row=2, column=0, padx=10, pady=10, sticky="w")
+
         self.graph_frame = customtkinter.CTkFrame(self.left_frame)
-        self.graph_frame.grid(row=1, column=1, padx=20, pady=20, sticky="nsew")
+        self.graph_frame.grid(row=1, column=0, padx=20, pady=20, sticky="nsew")
         self.show_graph(self.graph_frame)
+
+        self.update_balance()
 
 
 
