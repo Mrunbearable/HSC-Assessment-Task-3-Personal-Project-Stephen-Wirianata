@@ -30,7 +30,7 @@ class InvestmentMenu:
         canvas.get_tk_widget().pack(fill="both", expand=True)
 
     def update_balance(self):
-        balance = sum(inv.amount for inv in self.controller.portfolio)
+        balance = self.controller.totalaccountbalance()
         self.accountbalance.configure(text=f"Account Balance: ${balance:,.2f}")
 
     def menuGui(self):

@@ -16,7 +16,7 @@ class CertificateofDepositApp:
     def __init__(self, controller):
         self.controller = controller
         self.app = controller.app
-        self.portfolio = controller.portfolio
+        self.portfolio = controller.cod_portfolio
         self.time_options = {"6 months": 0.5,"12 months": 1,"5 years": 5,"10 years": 10,"20 years": 20} 
         self.selected_years = 1
 
@@ -34,7 +34,7 @@ class CertificateofDepositApp:
         for entry in [self.entry_name, self.entry_amount, self.entry_rateofreturn]:
             entry.delete(0, 'end')
 
-        self.controller.history.append((datetime.now(), sum(inv.amount for inv in self.controller.portfolio)))
+        self.controller.history.append((datetime.now(), sum(inv.amount for inv in self.controller.cod_portfolio)))
 
     def view_portfolio(self):
         for widget in self.display_frame.winfo_children():
@@ -55,9 +55,7 @@ class CertificateofDepositApp:
 
         for investment in self.portfolio:
             future_value = investment.calculate_return(investment.years)
-            returns.append(
-                f"{investment.name}: ${future_value:,.2f}"
-            )
+            returns.append(f"{investment.name}: ${future_value:,.2f}")
 
         self.returns_label.configure(text="\n".join(returns))
 
@@ -71,7 +69,7 @@ class CertificateofDepositApp:
                 self.entry_remove_name.delete(0, "end")
                 return
 
-        self.controller.history.append((datetime.now(), sum(inv.amount for inv in self.controller.portfolio)))
+        self.controller.history.append((datetime.now(), sum(inv.amount for inv in self.controller.cod_portfolio)))
     
     def set_years(self, option):    
         self.selected_years = self.time_options[option]
@@ -157,3 +155,5 @@ class CertificateofDepositApp:
 
         returnback_button = customtkinter.CTkButton(self.app,text="Back to Main Menu", fg_color="#06402B", width=800, height=30,command=self.returnback)
         returnback_button.place(x=640, y=735)
+
+        

@@ -3,20 +3,39 @@ from datetime import datetime
 from menu import InvestmentMenu
 from cod import CertificateofDepositApp
 from saving import SavingsApp
+from index import IndexApp
 
 class SmartInvestmentApp:
     def __init__(self):
         self.app = customtkinter.CTk()
         self.app.title("SMART INVESTMENTS")
         self.app.geometry("1400x1000")
-        self.portfolio = []
+        self.savings_portfolio = []
+        self.cod_portfolio = []
         self.history = []
 
         customtkinter.set_appearance_mode("Light")
         self.app.configure(fg_color="#F7E7CE")  
 
         self.operate_menu()
+        self.app.after(10000, self.interestautomation)
 
+    def apply_interest(self):
+        for inv in self.savings_portfolio:
+            if inv.rate_of_return > 0:
+                inv.compound_weekly()
+
+        self.history.append((datetime.now(), self.totalaccountbalance()))
+
+    def interestautomation(self):
+        self.apply_interest()
+        self.app.after(5000, self.interestautomation) 
+
+    def totalaccountbalance(self):
+        savings = sum(inv.amount for inv in self.savings_portfolio)
+        cod = sum(inv.amount for inv in self.cod_portfolio)
+        return savings + cod
+        
     def clear_window(self):
         for widget in self.app.winfo_children():
             widget.destroy()
@@ -28,14 +47,16 @@ class SmartInvestmentApp:
     def operate_savings(self):
         self.clear_window()
         SavingsApp(self)
-
+        
+    def operate_index(self):
+        self.clear_window()
+        IndexApp(self)
     def operate_menu(self):
         self.clear_window()
         InvestmentMenu(self)
 
     def start(self):
         self.app.mainloop()
-
 
 if __name__ == "__main__":
     app = SmartInvestmentApp()
