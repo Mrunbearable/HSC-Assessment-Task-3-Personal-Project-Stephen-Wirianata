@@ -30,27 +30,25 @@ class SavingsApp:
         withdraw = float(self.amount_entry.get())
         total = sum(inv.amount for inv in self.controller.savings_portfolio)
 
-        if total >= withdraw:
-            remaining = withdraw
-
-            new_portfolio = []
-
-            for inv in self.controller.portfolio:
-                if remaining <= 0:
-                    new_portfolio.append(inv)
-                    continue
-                elif inv.amount <= remaining:
-                    remaining -= inv.amount
-                else:
-                    inv.amount -= remaining
-                    remaining = 0
-                    new_portfolio.append(inv)
-
-            self.controller.savings_portfolio = new_portfolio   
-            self.controller.history.append((datetime.now(), sum(inv.amount for inv in self.controller.savings_portfolio)))
-        else:
+        if total < withdraw:
             self.controller.history.append((datetime.now(), total))
+            return
 
+        remaining = withdraw
+        new_portfolio = []
+
+        for inv in self.controller.savings_portfolio:
+            if remaining <= 0:
+                new_portfolio.append(inv)
+            elif inv.amount <= remaining:
+                remaining -= inv.amount
+            else:
+                inv.amount -= remaining
+                new_portfolio.append(inv)
+                remaining = 0
+
+        self.controller.savings_portfolio = new_portfolio
+        self.controller.history.append((datetime.now(), sum(inv.amount for inv in self.controller.savings_portfolio)))
         self.update_balance()
 
     def update_balance(self):

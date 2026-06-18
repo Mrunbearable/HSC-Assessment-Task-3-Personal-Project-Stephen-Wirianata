@@ -6,11 +6,16 @@ class Investment:
     def __init__(self, name, amount, rate_of_return, years):
         self.name = name
         self.amount = float(amount)
-        self.rate_of_return = float(rate_of_return)
-        self.years = years 
+        self.rate_of_return = 5
+        self.years = years
+        self.compounded = False
+    
+    def compound_period(self):
+        if self.compounded:
+            return
 
-    def calculate_return(self, years):
-        return self.amount * ((1 + self.rate_of_return/100) ** years)
+        self.amount *= (1 + self.rate_of_return / 100) ** years
+        self.compounded = True
 
 class CertificateofDepositApp:
     def __init__(self, controller):
@@ -24,17 +29,18 @@ class CertificateofDepositApp:
 
     def add_investment(self):
         name = self.entry_name.get()
-        amount = self.entry_amount.get()
-        rate_of_return = self.entry_rateofreturn.get()
+        amount = float(self.entry_amount.get())
 
-        new_investment = Investment(name, amount, rate_of_return, self.selected_years)
+        transfersuccess = self.controller.deposit(amount)
+
+        if not transfersuccess:
+            self.returns_label.configure(text="Insufficient funds")
+            return
+
+        new_investment = Investment(name, amount, self.selected_years)
         self.portfolio.append(new_investment)
+
         self.view_portfolio()
-
-        for entry in [self.entry_name, self.entry_amount, self.entry_rateofreturn]:
-            entry.delete(0, 'end')
-
-        self.controller.history.append((datetime.now(), sum(inv.amount for inv in self.controller.cod_portfolio)))
 
     def view_portfolio(self):
         for widget in self.display_frame.winfo_children():
@@ -54,8 +60,8 @@ class CertificateofDepositApp:
         returns = []
 
         for investment in self.portfolio:
-            future_value = investment.calculate_return(investment.years)
-            returns.append(f"{investment.name}: ${future_value:,.2f}")
+            investment.compound_period()
+            returns.append(f"{investment.name}: ${investment.amount:,.2f}")
 
         self.returns_label.configure(text="\n".join(returns))
 
@@ -75,6 +81,30 @@ class CertificateofDepositApp:
         self.selected_years = self.time_options[option]
         self.returns_label.configure(text=f"Selected: {option}")
 
+    def deposit(self, amount):
+        amount = float(amount)
+        total = sum(inv.amount for inv in self.mainportfolio)
+
+        if amount > total:
+            return False 
+
+        remaining = amount
+        new_main = []
+
+        for inv in self.mainportfolio:
+            if remaining <= 0:
+                new_main.append(inv)
+            elif inv.amount <= remaining:
+                remaining -= inv.amount
+            else:
+                inv.amount -= remaining
+                new_main.append(inv)
+                remaining = 0
+
+        self.mainportfolio = new_main
+        self.history.append((datetime.now(), self.totalaccountbalance()))
+        return True
+
     def returnback(self):
         for widget in self.app.winfo_children():
             widget.destroy()
@@ -92,7 +122,6 @@ class CertificateofDepositApp:
         righttop_frame.grid_columnconfigure(0, weight=1)
         righttop_frame.grid_propagate(False)
         righttop_frame.grid_rowconfigure(0, weight=1)
-        righttop_frame.grid_columnconfigure(0, weight=1)
 
         rightbottom_frame = customtkinter.CTkFrame(self.app, fg_color="#D2C3A9", width=800, height=300)
         rightbottom_frame.grid(row=2, column=1, padx=(10, 20), pady=(10, 20), sticky="new")

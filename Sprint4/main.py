@@ -12,7 +12,10 @@ class SmartInvestmentApp:
         self.app.geometry("1400x1000")
         self.savings_portfolio = []
         self.cod_portfolio = []
+        self.indexfund_portfolio = []
+        self.stockmarktet_portfolio = []
         self.history = []
+        self.mainportfolio = 100.0
 
         customtkinter.set_appearance_mode("Light")
         self.app.configure(fg_color="#F7E7CE")  
@@ -24,8 +27,14 @@ class SmartInvestmentApp:
         for inv in self.savings_portfolio:
             if inv.rate_of_return > 0:
                 inv.compound_weekly()
+        
+        for inv in self.cod_portfolio:
+                if not inv.compounded:
+                    inv.compound_period(inv.years)
+                    inv.compounded = True
 
         self.history.append((datetime.now(), self.totalaccountbalance()))
+
 
     def interestautomation(self):
         self.apply_interest()
@@ -34,7 +43,9 @@ class SmartInvestmentApp:
     def totalaccountbalance(self):
         savings = sum(inv.amount for inv in self.savings_portfolio)
         cod = sum(inv.amount for inv in self.cod_portfolio)
-        return savings + cod
+        index = sum(inv.shares * inv.buy_price for inv in self.indexfund_portfolio)
+
+        return self.mainportfolio + savings + cod + index
         
     def clear_window(self):
         for widget in self.app.winfo_children():
@@ -51,6 +62,11 @@ class SmartInvestmentApp:
     def operate_index(self):
         self.clear_window()
         IndexApp(self)
+
+    def operate_stock(self):
+        self.clear_window()
+        StockMarketApp(self)
+        
     def operate_menu(self):
         self.clear_window()
         InvestmentMenu(self)

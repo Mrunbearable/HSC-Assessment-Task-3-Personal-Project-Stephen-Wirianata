@@ -54,7 +54,7 @@ class InvestmentMenu:
         saving_button.grid(row=1, column=0, padx=20, pady=10, sticky="ew")
         certificatofdeposit_button = customtkinter.CTkButton(right_frame,text="Certificate Of Deposit", fg_color="#06402B", height=100, command=self.controller.operate_cod)
         certificatofdeposit_button.grid(row=2, column=0, padx=20, pady=10, sticky="ew")        
-        indexfund_button = customtkinter.CTkButton(right_frame,text="Index Fund", fg_color="#06402B", height=100)
+        indexfund_button = customtkinter.CTkButton(right_frame,text="Index Fund", fg_color="#06402B", height=100,  command=self.controller.operate_index)
         indexfund_button.grid(row=3, column=0, padx=20, pady=10, sticky="ew")        
         individualstocks_button = customtkinter.CTkButton(right_frame,text="Stock Market", fg_color="#06402B", height=100)
         individualstocks_button.grid(row=4, column=0, padx=20, pady=10, sticky="ew")
