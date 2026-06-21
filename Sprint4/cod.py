@@ -3,7 +3,7 @@ from datetime import datetime
 from functools import partial
 
 class Investment:
-    def __init__(self, name, amount, rate_of_return, years):
+    def __init__(self, name, amount, years):
         self.name = name
         self.amount = float(amount)
         self.rate_of_return = 5
@@ -13,8 +13,7 @@ class Investment:
     def compound_period(self):
         if self.compounded:
             return
-
-        self.amount *= (1 + self.rate_of_return / 100) ** years
+        self.amount *= (1 + self.rate_of_return / 100) ** float(self.years)
         self.compounded = True
 
 class CertificateofDepositApp:
@@ -31,7 +30,7 @@ class CertificateofDepositApp:
         name = self.entry_name.get()
         amount = float(self.entry_amount.get())
 
-        transfersuccess = self.controller.deposit(amount)
+        transfersuccess = self.deposit(amount)
 
         if not transfersuccess:
             self.returns_label.configure(text="Insufficient funds")
@@ -39,8 +38,15 @@ class CertificateofDepositApp:
 
         new_investment = Investment(name, amount, self.selected_years)
         self.portfolio.append(new_investment)
+        self.controller.history.append((datetime.now(), self.controller.totalaccountbalance()))
 
         self.view_portfolio()
+
+    def deposit(self, amount):
+        if amount > self.controller.mainportfolio:
+            return False
+        self.controller.mainportfolio -= amount
+        return True
 
     def view_portfolio(self):
         for widget in self.display_frame.winfo_children():
@@ -52,15 +58,15 @@ class CertificateofDepositApp:
             return
 
         for i, investment in enumerate(self.portfolio, start=1):
-            text = f"{i}. {investment.name} - ${investment.amount:,.2f} ({investment.rate_of_return}% ROI, {investment.years} years)"
+            text = f"{i}. {investment.name} - ${investment.amount:,.2f} {investment.rate_of_return}%, {investment.years} years"
             label = customtkinter.CTkLabel(self.display_frame, text=text, font=("Banschrift", 12), text_color="#2B2B2B")
             label.pack(anchor="w", padx=10, pady=2)
 
     def calculate_returns(self):
         returns = []
-
         for investment in self.portfolio:
-            investment.compound_period()
+            investment.compounded = False 
+            investment.compound_period() 
             returns.append(f"{investment.name}: ${investment.amount:,.2f}")
 
         self.returns_label.configure(text="\n".join(returns))
@@ -71,39 +77,14 @@ class CertificateofDepositApp:
         for investment in self.portfolio:
             if investment.name.lower() == name.lower():
                 self.portfolio.remove(investment)
+                self.controller.history.append((datetime.now(),sum(inv.amount for inv in self.controller.cod_portfolio)))
                 self.view_portfolio()
                 self.entry_remove_name.delete(0, "end")
                 return
-
-        self.controller.history.append((datetime.now(), sum(inv.amount for inv in self.controller.cod_portfolio)))
     
     def set_years(self, option):    
         self.selected_years = self.time_options[option]
         self.returns_label.configure(text=f"Selected: {option}")
-
-    def deposit(self, amount):
-        amount = float(amount)
-        total = sum(inv.amount for inv in self.mainportfolio)
-
-        if amount > total:
-            return False 
-
-        remaining = amount
-        new_main = []
-
-        for inv in self.mainportfolio:
-            if remaining <= 0:
-                new_main.append(inv)
-            elif inv.amount <= remaining:
-                remaining -= inv.amount
-            else:
-                inv.amount -= remaining
-                new_main.append(inv)
-                remaining = 0
-
-        self.mainportfolio = new_main
-        self.history.append((datetime.now(), self.totalaccountbalance()))
-        return True
 
     def returnback(self):
         for widget in self.app.winfo_children():
@@ -135,10 +116,6 @@ class CertificateofDepositApp:
         customtkinter.CTkLabel(left_frame, text="Amount").grid(row=2, column=0, padx=20, pady=5, sticky="w")
         self.entry_amount = customtkinter.CTkEntry(left_frame)
         self.entry_amount.grid(row=3, column=0, padx=20, pady=5, sticky="ew")
-
-        customtkinter.CTkLabel(left_frame, text="Rate of Return (%)").grid(row=4, column=0, padx=20, pady=5, sticky="w")
-        self.entry_rateofreturn = customtkinter.CTkEntry(left_frame)
-        self.entry_rateofreturn.grid(row=5, column=0, padx=20, pady=5, sticky="ew")
 
         period_frame = customtkinter.CTkFrame(left_frame, fg_color="transparent")
         period_frame.grid(row=7, column=0, padx=20, pady=10, sticky="nsew")
@@ -172,9 +149,6 @@ class CertificateofDepositApp:
         self.view_portfolio()
 
         customtkinter.CTkLabel(rightbottom_frame,text="Calculate Return On Investments").grid(row=0, column=0, padx=20, pady=5, sticky="w")
-        self.entry_years = customtkinter.CTkEntry(rightbottom_frame)
-        self.entry_years.grid(row=1, column=0, padx=20, pady=5, sticky="ew")
-        
         calculate_button = customtkinter.CTkButton(rightbottom_frame,text="Calculate Returns", fg_color="#06402B", command=self.calculate_returns)
         calculate_button.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
 

@@ -4,24 +4,38 @@ import pandas as pd
 from datetime import datetime
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
+from functools import partial
 
 API_KEY = "N8I5DJYIP7RH1BC6"
-SYMBOLS = {"NVDA", "ALAB", "ORCL", "GOOGL", "SPCX"}
-    
+TICKERS = ["NVDA", "ALAB", "ORCL", "GOOGL", "SPCX"]
+
+class Investment:
+    def __init__(self, name, amount, rate_of_return):
+        self.name = name
+        self.amount = amount
+        self.rate_of_return = rate_of_return
+
 class StockMarketApp:
     def __init__(self, controller):
         self.controller = controller
         self.app = controller.app
-        self.stocks = SYMBOLS   
+        self.stocks = TICKERS
+        self.marketpricestocks = []
+        self.marketgrowthstocks = []
+        self.shares = []
+        self.graphs = []
+        self.entry = []
         self.menuGui()
-        self.update_balance()
 
-    def stockdatarequests(self):
-        url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={SYMBOL}&apikey={API_KEY}"
+    def stockdatarequests(self, tickers):
+        url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={tickers}&apikey={API_KEY}"
         response = requests.get(url)
         data = response.json()
-
         time_series = data.get("Time Series (Daily)", {})
+
+        if not time_series:
+            return pd.DataFrame()
+
         dataframe = pd.DataFrame.from_dict(time_series, orient="index")
         dataframe = dataframe.astype(float)
         dataframe.index = pd.to_datetime(dataframe.index)
@@ -30,106 +44,121 @@ class StockMarketApp:
         return dataframe
 
     def setup_graph(self, frame):
-            self.figure, self.axis = plt.subplots(figsize=(6, 3))
-            self.canvas = FigureCanvasTkAgg(self.figure, master=frame)
-            self.canvas.draw()
-            self.canvas.get_tk_widget().pack(fill="both", expand=True)
+        figure, axis = plt.subplots(figsize=(6, 3))
+        canvas = FigureCanvasTkAgg(figure, master=frame)
 
-    def update_graph(self, frame):
-        data = self.indexdatarequests()
+        canvas.draw()
+        canvas.get_tk_widget().grid(row=0, column=0, columnspan=2, sticky="nsew")
+
+        return figure, axis, canvas 
+
+    def update_graph(self, frame, tickers, index):
+        data = self.stockdatarequests(tickers)
+
         if data.empty:
-            frame.after(60000, self.update_graph, frame)
+            frame.after(60000, self.update_graph, frame, tickers, index)
             return
 
-        latest_price = data.iloc[-1]["4. close"]
-        self.marketprice_label.configure(text=f"Current market price: ${latest_price:.2f}")
+        graph = self.graphs[index]
+        axis = graph["axis"]
+        figure = graph["figure"]
+        canvas = graph["canvas"]
 
-        start = float(data["4. close"].iloc[0])
+        latest_price = float(data.iloc[-1]["4. close"])
+        start = float(data["4. close"].iloc[-2])
         end = float(data["4. close"].iloc[-1])
         growth = ((end - start) / start) * 100
-        self.marketgrowth_label.configure(text=f"Market growth: {growth:.2f}%")
+        self.marketpricestocks[index].configure(text=f"{tickers} Price: ${latest_price:.2f}")
+        self.marketgrowthstocks[index].configure(text=f"Growth: {growth:.2f}%")
 
-        self.axis.clear()
-        self.axis.plot(data.index, data["4. close"], color="#06402B")
-        self.axis.set_title("VOO Live Price")
-        self.axis.set_ylabel("Price")
-        self.axis.grid(True)
-        self.figure.autofmt_xdate()
-        self.canvas.draw()
+        axis.clear()
+        axis.plot(data.index, data["4. close"], color="#06402B")
+        axis.set_title(f"{tickers} Price")
+        axis.set_ylabel("Price")
+        axis.grid(True)
 
-        frame.after(60000, self.update_graph, frame)
+        figure.autofmt_xdate()
+        canvas.draw()
+        frame.after(60000, self.update_graph, frame, tickers, index)
 
-    def get_latest_price(self, data):
-        return float(data["4. close"].iloc[-1])
-
-    def buy(self):
-        data = self.indexdatarequests()
+    def buy(self, stock):
+        data = self.stockdatarequests(stock)
         if data.empty:
             return
 
-        price = float(data["4. close"].iloc[-1])
-        cash = float(self.amount_entry.get())
-        shares = int(cash // price)
+        price = float(data.iloc[-1]["4. close"])
+        index = self.stocks.index(stock)
+        buyingshares = int(self.entry[index].get())
 
-        if shares <= 0:
-            print("Not enough money to buy 1 share")
+        if buyingshares <= 0:
+            print("Enter a valid number of shares")
             return
 
-        cost = shares * price
+        cost = buyingshares * price
 
         if self.controller.mainportfolio < cost:
-            print("Not enough cash in account")
+            print("Not enough cash")
             return
-        self.controller.mainportfolio -= cost
 
-        inv = Investment(name=SYMBOL, amount=shares, rate_of_return=0)
-        self.controller.savings_portfolio.append(inv)
+        self.controller.mainportfolio -= cost
+        inv = Investment(stock, buyingshares, 0)
+        self.controller.stockmarket_portfolio.append(inv)
         self.controller.history.append((datetime.now(), self.controller.totalaccountbalance()))
+        self.currentshares(stock)
         self.update_balance()
 
-    def sell(self):
-        data = self.indexdatarequests()
+    def sell(self, stock):
+        data = self.stockdatarequests(stock)
         if data.empty:
-          return
+            return
 
-        price = float(data["4. close"].iloc[-1])
-        shares_to_sell = int(float(self.amount_entry.get()))
-        total_shares = sum(inv.amount for inv in self.controller.savings_portfolio)
+        price = float(data.iloc[-1]["4. close"])
+        index = self.stocks.index(stock)
+        sellingshares = int(self.entry[index].get())
+        total_shares = sum(inv.amount for inv in self.controller.stockmarket_portfolio if inv.name == stock)
 
-        if shares_to_sell > total_shares:
+        if sellingshares > total_shares:
             print("Not enough shares")
             return
 
-        remaining = shares_to_sell
+        remaining = sellingshares
         new_portfolio = []
 
-        for inv in self.controller.savings_portfolio:
+        for inv in self.controller.stockmarket_portfolio:
             if remaining <= 0:
                 new_portfolio.append(inv)
-
             elif inv.amount <= remaining:
                 remaining -= inv.amount
-
             else:
                 inv.amount -= remaining
                 new_portfolio.append(inv)
                 remaining = 0
 
-        self.controller.savings_portfolio = new_portfolio
-        self.controller.mainportfolio += shares_to_sell * price
-        self.controller.history.append((datetime.now(), self.controller.totalaccountbalance()))
+        self.controller.stockmarket_portfolio = new_portfolio
+        self.controller.mainportfolio += sellingshares * price
+        self.controller.history.append((datetime.now(), self.controller.totalaccountbalance()) )
+        self.currentshares(stock)
         self.update_balance()
-        
+
+    def currentshares(self, stock):
+        index = self.stocks.index(stock)
+
+        total_shares = sum(inv.amount for inv in self.controller.stockmarket_portfolio if inv.name == stock)
+        self.shares[index].configure(text=f"Shares Owned: {total_shares}")
+
     def update_balance(self):
-        data = self.indexdatarequests()
-        if data.empty:
-            return
+        total_value = 0
 
-        price = float(data["4. close"].iloc[-1])
-        shares = sum(inv.amount for inv in self.controller.savings_portfolio)
-        value = shares * price
+        for stock in self.stocks:
+            data = self.stockdatarequests(stock)
+            if data.empty:
+                continue
 
-        self.balance_label.configure(text=f"Portfolio Value: ${value:.2f} ({shares:.0f} shares)")
+            price = float(data.iloc[-1]["4. close"])
+            shares = sum(inv.amount for inv in self.controller.stockmarket_portfolio if inv.name == stock)
+            total_value += shares * price
+
+        self.balance.configure(text=f"Portfolio Value: ${total_value:.2f}")
 
     def returnback(self):
         for widget in self.app.winfo_children():
@@ -137,30 +166,46 @@ class StockMarketApp:
         self.controller.operate_menu()
 
     def menuGui(self):
+        for i in range(len(self.stocks)):
+            self.app.grid_columnconfigure(i, weight=1)
+        self.app.grid_rowconfigure(0, weight=1)
+            
+        self.balance = customtkinter.CTkLabel(self.app,text="Portfolio Value: $0.00",font=("Bahnschrift", 12))
+        self.balance.grid(row=1, column=0, columnspan=len(self.stocks), pady=10)
+
         for i, stock in enumerate(self.stocks):
             stockframe = customtkinter.CTkFrame(self.app, fg_color="#D2C3A9", width=600, height=750)
-            stockframe.grid(row=i+1, column=0, rowspan=2, padx=(20, 10), pady=20, sticky="nsew")
+            stockframe.grid(row=0,column=i,rowspan=2,padx=(20, 10),pady=20,sticky="nsew")
             stockframe.grid_columnconfigure(0, weight=1)
-            stockframe.grid_propagate(False)
+            stockframe.grid_columnconfigure(1, weight=1)
+            stockframe.grid_rowconfigure(2, weight=1)
 
-            marketprice_label = customtkinter.CTkLabel(stockframe, text=f"{stock} Price: --",font=("Bahnschrift", 10))
-            marketprice_label.grid(row=0, column=0, padx=10)
+            marketprice = customtkinter.CTkLabel(stockframe,text=f"{stock} Price: --",font=("Bahnschrift", 10))
+            marketprice.grid(row=1, column=0, padx=10)
+            marketgrowth = customtkinter.CTkLabel(stockframe,text=f"{stock} Growth: --",font=("Bahnschrift", 10))
+            marketgrowth.grid(row=2, column=0, padx=10)
+            shares = customtkinter.CTkLabel(stockframe, text="Shares Owned: 0", font=("Bahnschrift", 10))
+            shares.grid(row=3, column=0, padx=10)
 
-            marketgrowth_label = customtkinter.CTkLabel(stockframe, text=f"{stock} Price: --",font=("Bahnschrift", 10))
-            marketgrowth_label.grid(row=0, column=1, padx=10)
+            self.shares.append(shares)
+            self.marketpricestocks.append(marketprice)
+            self.marketgrowthstocks.append(marketgrowth)
+            fig, axis, canvas = self.setup_graph(stockframe)
+            
+            entry = customtkinter.CTkEntry(stockframe, placeholder_text="Enter amount")
+            entry.grid(row=4, column=0, pady=10)
+            savingsbutton_frame = customtkinter.CTkFrame(stockframe, fg_color="#E2C3A9")
+            savingsbutton_frame.grid(row=5, column=0, pady=(15, 60))
+            savingsbutton_frame.grid_columnconfigure(0, weight=1)
+            savingsbutton_frame.grid_columnconfigure(1, weight=1)
+            buy_button = customtkinter.CTkButton(savingsbutton_frame, text="Buy SHARE", fg_color="#06402B", command=partial(self.buy, stock))
+            buy_button.grid(row=0, column=0, padx=6)
+            sell_button = customtkinter.CTkButton(savingsbutton_frame, text="Sell SHARE", fg_color="#06402B", command=partial(self.sell, stock))
+            sell_button.grid(row=0, column=1, padx=6)
 
-        right_frame = customtkinter.CTkFrame(self.app, fg_color="#D2C3A9", width=800, height=750)
-        right_frame.grid(row=1, column=1, padx=(10, 20), pady=(20, 10), sticky="nsew")
-        right_frame.grid_propagate(False)
-        right_frame.grid_columnconfigure(0, weight=1)
-        
-        self.balance_label = customtkinter.CTkLabel(right_frame,text="Savings: $0.00",font=("Bahnschrift", 18))
-        self.balance_label.grid(row=0, column=0, pady=10)
+            self.entry.append(entry)
+            self.graphs.append({"figure": fig,"axis": axis,"canvas": canvas})
+            self.update_graph(stockframe, stock, i)
+            self.currentshares(stock)
 
-        #returnback_button = customtkinter.CTkButton(self.app,text="Back to Main Menu", fg_color="#06402B", width=1500, height=30,command=self.returnback)
-        #returnback_button.place(x=20, y=640)
-
-        self.setup_graph(stockframe, stockframe2, stockframe, stockframe4, stockframe5)
-        self.update_graph(stockframe, stockframe2, stockframe3, stockframe4, stockframe5)
-
-
+        self.update_balance()

@@ -21,17 +21,23 @@ class SavingsApp:
 
     def deposit(self):
         deposit = float(self.amount_entry.get())
+
+        if deposit > self.controller.mainportfolio:
+            print("Not enough cash")
+            return
+
+        self.controller.mainportfolio -= deposit
         inv = Investment("Savings", deposit, rate_of_return=0.05)
         self.controller.savings_portfolio.append(inv)
-        self.controller.history.append((datetime.now(), sum(inv.amount for inv in self.controller.savings_portfolio)))
+        self.controller.history.append((datetime.now(), self.controller.totalaccountbalance()))
         self.update_balance()
 
     def withdraw(self):
         withdraw = float(self.amount_entry.get())
         total = sum(inv.amount for inv in self.controller.savings_portfolio)
 
-        if total < withdraw:
-            self.controller.history.append((datetime.now(), total))
+        if withdraw > total:
+            print("Not enough savings")
             return
 
         remaining = withdraw
@@ -48,7 +54,8 @@ class SavingsApp:
                 remaining = 0
 
         self.controller.savings_portfolio = new_portfolio
-        self.controller.history.append((datetime.now(), sum(inv.amount for inv in self.controller.savings_portfolio)))
+        self.controller.mainportfolio += withdraw
+        self.controller.history.append((datetime.now(), self.controller.totalaccountbalance()))
         self.update_balance()
 
     def update_balance(self):

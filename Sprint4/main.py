@@ -4,6 +4,7 @@ from menu import InvestmentMenu
 from cod import CertificateofDepositApp
 from saving import SavingsApp
 from index import IndexApp
+from stock import StockMarketApp
 
 class SmartInvestmentApp:
     def __init__(self):
@@ -13,9 +14,9 @@ class SmartInvestmentApp:
         self.savings_portfolio = []
         self.cod_portfolio = []
         self.indexfund_portfolio = []
-        self.stockmarktet_portfolio = []
+        self.stockmarket_portfolio = []
         self.history = []
-        self.mainportfolio = 100.0
+        self.mainportfolio = 10000.0
 
         customtkinter.set_appearance_mode("Light")
         self.app.configure(fg_color="#F7E7CE")  
@@ -43,9 +44,10 @@ class SmartInvestmentApp:
     def totalaccountbalance(self):
         savings = sum(inv.amount for inv in self.savings_portfolio)
         cod = sum(inv.amount for inv in self.cod_portfolio)
-        index = sum(inv.shares * inv.buy_price for inv in self.indexfund_portfolio)
+        indexfund = sum(inv.shares * inv.buy_price for inv in self.indexfund_portfolio)
+        stockmarket = sum(inv.shares * inv.buy_price for inv in self.stockmarket_portfolio)
 
-        return self.mainportfolio + savings + cod + index
+        return self.mainportfolio + savings + cod + indexfund + stockmarket 
         
     def clear_window(self):
         for widget in self.app.winfo_children():

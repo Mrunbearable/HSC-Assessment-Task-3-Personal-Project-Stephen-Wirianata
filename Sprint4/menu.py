@@ -20,7 +20,7 @@ class InvestmentMenu:
 
         ax.plot(dates, values, marker="o", color="#06402B")
         ax.set_title("Portfolio Balance")
-        ax.set_ylabel("Value ($)")
+        ax.set_ylabel("Value")
         ax.grid(True)
 
         fig.autofmt_xdate()
@@ -56,7 +56,7 @@ class InvestmentMenu:
         certificatofdeposit_button.grid(row=2, column=0, padx=20, pady=10, sticky="ew")        
         indexfund_button = customtkinter.CTkButton(right_frame,text="Index Fund", fg_color="#06402B", height=100,  command=self.controller.operate_index)
         indexfund_button.grid(row=3, column=0, padx=20, pady=10, sticky="ew")        
-        individualstocks_button = customtkinter.CTkButton(right_frame,text="Stock Market", fg_color="#06402B", height=100)
+        individualstocks_button = customtkinter.CTkButton(right_frame,text="Stock Market", fg_color="#06402B", height=100, command=self.controller.operate_stock)
         individualstocks_button.grid(row=4, column=0, padx=20, pady=10, sticky="ew")
 
         self.accountbalance = customtkinter.CTkLabel(self.left_frame, text="Account Balance: $0.00", font=("Banschrift", 16))

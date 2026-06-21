@@ -9,11 +9,11 @@ API_KEY = "N8I5DJYIP7RH1BC6"
 SYMBOL = "VOO"
 
 class Investment:
-    def __init__(self, name, amount, rate_of_return=0, years=0):
+    def __init__(self, name, amount):
         self.name = name    
         self.amount = float(amount)
-        self.rate_of_return = float(rate_of_return)
-        self.years = years
+        self.rate_of_return = 0
+        self.years = 0
         
 
 class IndexApp:
@@ -49,12 +49,12 @@ class IndexApp:
             return
 
         latest_price = data.iloc[-1]["4. close"]
-        self.marketprice_label.configure(text=f"Current market price: ${latest_price:.2f}")
+        self.marketprice.configure(text=f"Current market price: ${latest_price:.2f}")
 
         start = float(data["4. close"].iloc[0])
         end = float(data["4. close"].iloc[-1])
         growth = ((end - start) / start) * 100
-        self.marketgrowth_label.configure(text=f"Market growth: {growth:.2f}%")
+        self.marketgrowth.configure(text=f"Market growth: {growth:.2f}%")
 
         self.axis.clear()
         self.axis.plot(data.index, data["4. close"], color="#06402B")
@@ -69,61 +69,58 @@ class IndexApp:
     def get_latest_price(self, data):
         return float(data["4. close"].iloc[-1])
 
-    def deposit(self):
+    def buy(self):
         data = self.indexdatarequests()
         if data.empty:
             return
 
         price = float(data["4. close"].iloc[-1])
-        cash = float(self.amount_entry.get())
-        shares = int(cash // price)
+        shares = int(self.indexentry.get())
 
         if shares <= 0:
-            print("Not enough money to buy 1 share")
+            print("Enter valid shares")
             return
 
         cost = shares * price
 
         if self.controller.mainportfolio < cost:
-            print("Not enough cash in account")
+            print("Not enough cash in main portfolio")
             return
-        self.controller.mainportfolio -= cost
 
-        inv = Investment(name=SYMBOL, amount=shares, rate_of_return=0)
-        self.controller.savings_portfolio.append(inv)
+        self.controller.mainportfolio -= cost
+        inv = Investment(name=SYMBOL, amount=shares)
+        self.controller.indexfund_portfolio.append(inv)
         self.controller.history.append((datetime.now(), self.controller.totalaccountbalance()))
         self.update_balance()
 
-    def withdraw(self):
+    def sell(self):
         data = self.indexdatarequests()
         if data.empty:
-          return
+            return
 
         price = float(data["4. close"].iloc[-1])
-        shares_to_sell = int(float(self.amount_entry.get()))
-        total_shares = sum(inv.amount for inv in self.controller.savings_portfolio)
+        sell_shares = int(self.indexentry.get())
+        total = sum(inv.amount for inv in self.controller.indexfund_portfolio)
 
-        if shares_to_sell > total_shares:
+        if sell_shares > total:
             print("Not enough shares")
             return
 
-        remaining = shares_to_sell
+        remaining = sell_shares
         new_portfolio = []
 
-        for inv in self.controller.savings_portfolio:
+        for inv in self.controller.indexfund_portfolio:
             if remaining <= 0:
                 new_portfolio.append(inv)
-
             elif inv.amount <= remaining:
                 remaining -= inv.amount
-
             else:
                 inv.amount -= remaining
                 new_portfolio.append(inv)
                 remaining = 0
 
-        self.controller.savings_portfolio = new_portfolio
-        self.controller.mainportfolio += shares_to_sell * price
+        self.controller.indexfund_portfolio = new_portfolio
+        self.controller.mainportfolio += sell_shares * price
         self.controller.history.append((datetime.now(), self.controller.totalaccountbalance()))
         self.update_balance()
         
@@ -133,10 +130,9 @@ class IndexApp:
             return
 
         price = float(data["4. close"].iloc[-1])
-        shares = sum(inv.amount for inv in self.controller.savings_portfolio)
+        shares = sum(inv.amount for inv in self.controller.indexfund_portfolio if inv.name == SYMBOL)
         value = shares * price
-
-        self.balance_label.configure(text=f"Portfolio Value: ${value:.2f} ({shares:.0f} shares)")
+        self.balance.configure(text=f"VOO Value: ${value:.2f} ({shares:.0f} shares)")
 
     def returnback(self):
         for widget in self.app.winfo_children():
@@ -155,28 +151,28 @@ class IndexApp:
         right_frame.grid_propagate(False)
         right_frame.grid_columnconfigure(0, weight=1)
         
-        self.balance_label = customtkinter.CTkLabel(right_frame,text="Savings: $0.00",font=("Bahnschrift", 18))
-        self.balance_label.grid(row=0, column=0, pady=10)
+        self.balance = customtkinter.CTkLabel(right_frame,text="Portfolio: $0.00",font=("Bahnschrift", 18))
+        self.balance.grid(row=0, column=0, pady=10)
 
-        enter_label = customtkinter.CTkLabel(right_frame, text="Enter Currency", font=("Bahnschrift", 10))
-        enter_label.grid(row=1, column=0, pady=10)
+        entry = customtkinter.CTkLabel(right_frame, text="Enter Number of Wanted Shares", font=("Bahnschrift", 10))
+        entry.grid(row=1, column=0, pady=10)
 
-        self.marketprice_label = customtkinter.CTkLabel(right_frame,text="Current market price: --",font=("Bahnschrift", 10))
-        self.marketprice_label.grid(row=2, column=0, pady=10)
+        self.marketprice = customtkinter.CTkLabel(right_frame,text="Current market price: --",font=("Bahnschrift", 10))
+        self.marketprice.grid(row=2, column=0, pady=10)
 
-        self.marketgrowth_label = customtkinter.CTkLabel(right_frame, text="Current market growth: {}", font=("Bahnschrift", 10))
-        self.marketgrowth_label.grid(row=3, column=0, pady=10)
+        self.marketgrowth = customtkinter.CTkLabel(right_frame, text="Current market growth: {}", font=("Bahnschrift", 10))
+        self.marketgrowth.grid(row=3, column=0, pady=10)
 
-        self.amount_entry = customtkinter.CTkEntry(right_frame, placeholder_text="Enter amount")
-        self.amount_entry.grid(row=4, column=0, pady=10)
+        self.indexentry = customtkinter.CTkEntry(right_frame, placeholder_text="Enter amount")
+        self.indexentry.grid(row=4, column=0, pady=10)
 
         savingsbutton_frame = customtkinter.CTkFrame(right_frame, fg_color="#E2C3A9")
         savingsbutton_frame.grid(row=5, column=0, pady=(15, 60))
 
-        deposit_button = customtkinter.CTkButton(savingsbutton_frame, text="Deposit", fg_color="#06402B", command=self.deposit)
+        deposit_button = customtkinter.CTkButton(savingsbutton_frame, text="Deposit", fg_color="#06402B", command=self.buy) 
         deposit_button.grid(row=0, column=0, padx=6)
 
-        withdraw_button = customtkinter.CTkButton(savingsbutton_frame, text="Withdraw", fg_color="#06402B", command=self.withdraw)
+        withdraw_button = customtkinter.CTkButton(savingsbutton_frame, text="Withdraw", fg_color="#06402B", command=self.sell)
         withdraw_button.grid(row=0, column=1, padx=6)
 
         returnback_button = customtkinter.CTkButton(self.app,text="Back to Main Menu", fg_color="#06402B", width=800, height=30,command=self.returnback)
