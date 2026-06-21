@@ -9,12 +9,16 @@ class Investment:
         self.rate_of_return = 5
         self.years = years
         self.compounded = False
+        self.start = datetime.now()
     
     def compound_period(self):
-        if self.compounded:
-            return
         self.amount *= (1 + self.rate_of_return / 100) ** float(self.years)
         self.compounded = True
+
+    def progress(self):
+        total_seconds = self.years * 60
+        elapsed = (datetime.now() - self.start).total_seconds()
+        return min(elapsed / total_seconds, 1.0)
 
 class CertificateofDepositApp:
     def __init__(self, controller):
@@ -58,9 +62,12 @@ class CertificateofDepositApp:
             return
 
         for i, investment in enumerate(self.portfolio, start=1):
-            text = f"{i}. {investment.name} - ${investment.amount:,.2f} {investment.rate_of_return}%, {investment.years} years"
-            label = customtkinter.CTkLabel(self.display_frame, text=text, font=("Banschrift", 12), text_color="#2B2B2B")
-            label.pack(anchor="w", padx=10, pady=2)
+            text = f"{i}. {investment.name} - ${investment.amount:,.2f} {investment.rate_of_return}%, {investment.years} yrs"
+            time = customtkinter.CTkLabel(self.display_frame,text=text,font=("Banschrift", 12), text_color="#2B2B2B")
+            time.pack(anchor="w", padx=10, pady=(6, 0))
+            bar = customtkinter.CTkProgressBar(self.display_frame)
+            bar.set(investment.progress())
+            bar.pack(fill="x", padx=10, pady=(0, 8))
 
     def calculate_returns(self):
         returns = []
@@ -82,6 +89,15 @@ class CertificateofDepositApp:
                 self.entry_remove_name.delete(0, "end")
                 return
     
+    def verify_cod(self):
+        for investment in self.portfolio:
+            if not investment.compounded and investment.progress() >= 1.0:
+                investment.compound_period()
+                self.controller.mainportfolio += investment.amount
+
+        self.view_portfolio()
+        self.display_frame.after(1000, self.verify_cod)
+        
     def set_years(self, option):    
         self.selected_years = self.time_options[option]
         self.returns_label.configure(text=f"Selected: {option}")
@@ -147,6 +163,7 @@ class CertificateofDepositApp:
         self.display_frame = customtkinter.CTkFrame(righttop_frame)
         self.display_frame.grid(row=0,column=0,padx=10,pady=10,sticky="nsew")
         self.view_portfolio()
+        self.display_frame.after(1000, self.view_portfolio)
 
         customtkinter.CTkLabel(rightbottom_frame,text="Calculate Return On Investments").grid(row=0, column=0, padx=20, pady=5, sticky="w")
         calculate_button = customtkinter.CTkButton(rightbottom_frame,text="Calculate Returns", fg_color="#06402B", command=self.calculate_returns)
@@ -158,5 +175,6 @@ class CertificateofDepositApp:
 
         returnback_button = customtkinter.CTkButton(self.app,text="Back to Main Menu", fg_color="#06402B", width=800, height=30,command=self.returnback)
         returnback_button.place(x=640, y=735)
+        self.verify_cod()
 
         

@@ -15,7 +15,6 @@ class Investment:
         self.rate_of_return = 0
         self.years = 0
         
-
 class IndexApp:
     def __init__(self, controller):
         self.controller = controller
@@ -45,7 +44,7 @@ class IndexApp:
     def update_graph(self, frame):
         data = self.indexdatarequests()
         if data.empty:
-            frame.after(60000, self.update_graph, frame)
+            frame.after(600000, self.update_graph, frame)
             return
 
         latest_price = data.iloc[-1]["4. close"]
@@ -64,7 +63,7 @@ class IndexApp:
         self.figure.autofmt_xdate()
         self.canvas.draw()
 
-        frame.after(60000, self.update_graph, frame)
+        frame.after(600000, self.update_graph, frame)
 
     def get_latest_price(self, data):
         return float(data["4. close"].iloc[-1])
@@ -176,7 +175,7 @@ class IndexApp:
         withdraw_button.grid(row=0, column=1, padx=6)
 
         returnback_button = customtkinter.CTkButton(self.app,text="Back to Main Menu", fg_color="#06402B", width=800, height=30,command=self.returnback)
-        returnback_button.place(x=1000, y=650)
+        returnback_button.place(x=600, y=650)
 
         self.setup_graph(left_frame)
         self.update_graph(left_frame)

@@ -31,7 +31,7 @@ class SmartInvestmentApp:
         
         for inv in self.cod_portfolio:
                 if not inv.compounded:
-                    inv.compound_period(inv.years)
+                    inv.compound_period()
                     inv.compounded = True
 
         self.history.append((datetime.now(), self.totalaccountbalance()))
@@ -39,15 +39,15 @@ class SmartInvestmentApp:
 
     def interestautomation(self):
         self.apply_interest()
-        self.app.after(5000, self.interestautomation) 
+        self.app.after(10000, self.interestautomation) 
 
     def totalaccountbalance(self):
         savings = sum(inv.amount for inv in self.savings_portfolio)
         cod = sum(inv.amount for inv in self.cod_portfolio)
-        indexfund = sum(inv.shares * inv.buy_price for inv in self.indexfund_portfolio)
-        stockmarket = sum(inv.shares * inv.buy_price for inv in self.stockmarket_portfolio)
+        indexfund = sum(inv.amount for inv in self.indexfund_portfolio)
+        stockmarket = sum(inv.amount for inv in self.stockmarket_portfolio)
 
-        return self.mainportfolio + savings + cod + indexfund + stockmarket 
+        return self.mainportfolio + savings  + cod + indexfund + stockmarket 
         
     def clear_window(self):
         for widget in self.app.winfo_children():
