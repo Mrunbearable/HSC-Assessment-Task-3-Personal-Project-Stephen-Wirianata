@@ -25,7 +25,7 @@ class SavingsApp:
         deposit = float(self.amount_entry.get())
 
         if deposit > self.controller.mainportfolio:
-            print("Not enough cash")
+            self.status.configure(text="Not enough cash.", text_color="red")
             return
 
         self.controller.mainportfolio -= deposit
@@ -41,7 +41,7 @@ class SavingsApp:
         total = sum(inv.amount for inv in self.controller.savings_portfolio)
 
         if withdraw > total:
-            print("Not enough savings")
+            self.status.configure(text="Not enough funds in savings.", text_color="red")
             return
 
         remaining = withdraw
@@ -66,7 +66,7 @@ class SavingsApp:
 
     def update_balance(self):
         balance = sum(inv.amount for inv in self.controller.savings_portfolio)
-        self.balance_label.configure(text=f"Savings: ${balance:.2f}")
+        self.balance.configure(text=f"Savings: ${balance:.2f}")
 
     def autorefresh_balance(self):
         if not self.active:
@@ -86,26 +86,23 @@ class SavingsApp:
         savings_frame.grid_columnconfigure(0, weight=1)
         savings_frame.grid_propagate(False)
 
-        self.balance_label = customtkinter.CTkLabel(savings_frame, text="Savings: $0.00", font=("Bahnschrift", 35))
-        self.balance_label.grid(row=0, column=0, pady=(60, 10))
-
-        enter_label = customtkinter.CTkLabel(savings_frame, text="Enter Currency", font=("Bahnschrift", 10))
-        enter_label.grid(row=1, column=0, pady=10)
-
-        interestrate_label = customtkinter.CTkLabel(savings_frame, text="Current interest rate: 5%", font=("Bahnschrift", 10))
-        interestrate_label.grid(row=2, column=0, pady=10)
+        self.balance = customtkinter.CTkLabel(savings_frame, text="Savings: $0.00", font=("Bahnschrift", 35))
+        self.balance.grid(row=0, column=0, pady=(60, 10))
+        enter = customtkinter.CTkLabel(savings_frame, text="Enter Currency", font=("Bahnschrift", 20))
+        enter.grid(row=1, column=0, pady=10)
+        interestrate = customtkinter.CTkLabel(savings_frame, text="Current interest rate: 5%", font=("Bahnschrift", 20))
+        interestrate.grid(row=2, column=0, pady=10)
 
         self.amount_entry = customtkinter.CTkEntry(savings_frame, placeholder_text="Enter amount")
         self.amount_entry.grid(row=3, column=0, pady=10)
-
         savingsbutton_frame = customtkinter.CTkFrame(savings_frame, fg_color="#E2C3A9")
         savingsbutton_frame.grid(row=4, column=0, pady=(15, 60))
-
         deposit_button = customtkinter.CTkButton(savingsbutton_frame, text="Deposit", fg_color="#06402B", command=self.deposit)
         deposit_button.grid(row=0, column=0, padx=6)
-
         withdraw_button = customtkinter.CTkButton(savingsbutton_frame, text="Withdraw", fg_color="#06402B", command=self.withdraw)
         withdraw_button.grid(row=0, column=1, padx=6)
+        self.status = customtkinter.CTkLabel(savings_frame, text="", font=("Bahnschrift", 20))
+        self.status.grid(row=5, column=0, pady=10)
 
         returnback_button = customtkinter.CTkButton(self.app,text="Back to Main Menu", fg_color="#06402B", width=1500, height=30,command=self.returnback)
         returnback_button.place(x=20, y=640)

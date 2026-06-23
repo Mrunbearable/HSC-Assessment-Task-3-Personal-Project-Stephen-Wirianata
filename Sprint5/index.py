@@ -1,5 +1,5 @@
 import customtkinter
-import yfinance as yf
+import requests
 import pandas as pd
 from datetime import datetime
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 from userdata import save_users
 
 SYMBOL = "VOO"
+TWELVEDATA_API_KEY = "91002cdaa44445d99142fd352da2e0dc"
+TWELVEDATA_BASE_URL = "https://api.twelvedata.com"
 
 class Investment:
     def __init__(self, name, amount):
@@ -24,18 +26,29 @@ class IndexApp:
 
     def indexdatarequests(self):
         try:
-            data = yf.Ticker(SYMBOL).history(period="60d", interval="1d")
+            response = requests.get(
+                f"{TWELVEDATA_BASE_URL}/time_series",
+                params={
+                    "symbol": SYMBOL,
+                    "interval": "1day",
+                    "outputsize": 60,
+                    "apikey": TWELVEDATA_API_KEY,
+                },
+                timeout=10,
+            )
+            data = response.json()
         except Exception as e:
-            print(f"Error fetching data: {e}")
+            print(f"[indexdatarequests] Exception fetching data: {e}")
             return pd.DataFrame()
 
-        if data.empty:
+        if not data or data.get("status") == "error" or "values" not in data:
+            print(f"[indexdatarequests] No data for {SYMBOL}: {data}")
             return pd.DataFrame()
 
+        values = data["values"]
         dataframe = pd.DataFrame({
-            "4. close": data["Close"]
-        })
-        dataframe.index = pd.to_datetime(dataframe.index).tz_localize(None)
+            "4. close": [float(v["close"]) for v in values],
+        }, index=pd.to_datetime([v["datetime"] for v in values]))
         dataframe = dataframe.sort_index()
 
         return dataframe
@@ -108,7 +121,7 @@ class IndexApp:
         total = sum(inv.amount for inv in self.controller.indexfund_portfolio)
 
         if sell_shares > total:
-            print("Not enough shares")
+            self.status.configure(text="Not enough shares to sell.", text_color="red")
             return
 
         remaining = sell_shares
@@ -158,32 +171,30 @@ class IndexApp:
         right_frame.grid_propagate(False)
         right_frame.grid_columnconfigure(0, weight=1)
         
-        self.balance = customtkinter.CTkLabel(right_frame,text="Portfolio: $0.00",font=("Bahnschrift", 18))
+        self.balance = customtkinter.CTkLabel(right_frame,text="Portfolio: $0.00",font=("Bahnschrift", 35))
         self.balance.grid(row=0, column=0, pady=10)
 
-        entry = customtkinter.CTkLabel(right_frame, text="Enter Number of Wanted Shares", font=("Bahnschrift", 10))
+        entry = customtkinter.CTkLabel(right_frame, font=("Bahnschrift", 20), text="Enter Number of Wanted Shares")
         entry.grid(row=1, column=0, pady=10)
-
-        self.marketprice = customtkinter.CTkLabel(right_frame,text="Current market price: --",font=("Bahnschrift", 10))
+        self.marketprice = customtkinter.CTkLabel(right_frame,text="Current market price: --",font=("Bahnschrift", 20))
         self.marketprice.grid(row=2, column=0, pady=10)
-
-        self.marketgrowth = customtkinter.CTkLabel(right_frame, text="Current market growth: {}", font=("Bahnschrift", 10))
+        self.marketgrowth = customtkinter.CTkLabel(right_frame, font=("Bahnschrift", 20), text="Current market growth: {}")
         self.marketgrowth.grid(row=3, column=0, pady=10)
-
         self.indexentry = customtkinter.CTkEntry(right_frame, placeholder_text="Enter amount")
         self.indexentry.grid(row=4, column=0, pady=10)
 
         savingsbutton_frame = customtkinter.CTkFrame(right_frame, fg_color="#E2C3A9")
         savingsbutton_frame.grid(row=5, column=0, pady=(15, 60))
-
-        deposit_button = customtkinter.CTkButton(savingsbutton_frame, text="Deposit", fg_color="#06402B", command=self.buy) 
+        deposit_button = customtkinter.CTkButton(savingsbutton_frame, text="Buy", fg_color="#06402B", command=self.buy) 
         deposit_button.grid(row=0, column=0, padx=6)
-
-        withdraw_button = customtkinter.CTkButton(savingsbutton_frame, text="Withdraw", fg_color="#06402B", command=self.sell)
+        withdraw_button = customtkinter.CTkButton(savingsbutton_frame, text="Sell", fg_color="#06402B", command=self.sell)
         withdraw_button.grid(row=0, column=1, padx=6)
 
+        self.status = customtkinter.CTkLabel(self.app, text="", font=("Bahnschrift", 20))
+        self.status.grid(row=2, column=0, columnspan=2, pady=10)
+
         returnback_button = customtkinter.CTkButton(self.app,text="Back to Main Menu", fg_color="#06402B", width=800, height=30,command=self.returnback)
-        returnback_button.place(x=480, y=700)
+        returnback_button.place(x=500, y=720)
 
         self.setup_graph(left_frame)
         self.update_graph(left_frame)

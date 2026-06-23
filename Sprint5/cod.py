@@ -21,6 +21,9 @@ class Investment:
         elapsed = (datetime.now() - self.start).total_seconds()
         return min(elapsed / total_seconds, 1.0)
 
+    def is_finsihedstocks(self):
+        return self.progress() >= 1.0
+
 class CertificateofDepositApp:
     def __init__(self, controller):
         self.controller = controller
@@ -38,7 +41,7 @@ class CertificateofDepositApp:
         transfersuccess = self.deposit(amount)
 
         if not transfersuccess:
-            self.returns_label.configure(text="Insufficient funds")
+            self.returns.configure(text="Insufficient funds")
             return
 
         new_investment = Investment(name, amount, self.selected_years)
@@ -53,6 +56,24 @@ class CertificateofDepositApp:
         if amount > self.controller.mainportfolio:
             return False
         self.controller.mainportfolio -= amount
+        return True
+
+    def processfinished(self):
+        finsihedstocks = [inv for inv in self.portfolio if inv.is_finsihedstocks()]
+
+        if not finsihedstocks:
+            return False
+
+        for investment in finsihedstocks:
+            investment.compound_period()
+            self.controller.mainportfolio += investment.amount
+            self.portfolio.remove(investment)
+
+        self.controller.frequentdatarefresh()
+        self.controller.users_data[self.controller.current_user_token]["history"].append(
+            (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.controller.totalaccountbalance())
+        )
+        save_users(self.controller.users_data)
         return True
 
     def view_portfolio(self):
@@ -79,7 +100,7 @@ class CertificateofDepositApp:
             investment.compound_period() 
             returns.append(f"{investment.name}: ${investment.amount:,.2f}")
 
-        self.returns_label.configure(text="\n".join(returns))
+        self.returns.configure(text="\n".join(returns))
 
     def remove_investment(self):
         name = self.entry_remove_name.get().strip()
@@ -95,25 +116,13 @@ class CertificateofDepositApp:
                 return
     
     def verify_cod(self):
-        finishedcod = []
-
-        for investment in self.portfolio:
-            if not investment.compounded and investment.progress() >= 1.0:
-                investment.compound_period()
-                self.controller.mainportfolio += investment.amount
-                finishedcod.append(investment)
-
-        if finishedcod:
-            for investment in finishedcod:
-                self.portfolio.remove(investment)
-            self.controller.frequentdatarefresh()
-
+        self.processfinished()
         self.view_portfolio()
         self.display_frame.after(1000, self.verify_cod)
         
     def set_years(self, option):    
         self.selected_years = self.time_options[option]
-        self.returns_label.configure(text=f"Selected: {option}")
+        self.returns.configure(text=f"Selected: {option}")
 
     def returnback(self):
         for widget in self.app.winfo_children():
@@ -138,11 +147,11 @@ class CertificateofDepositApp:
         rightbottom_frame.grid_columnconfigure(0, weight=1)
         rightbottom_frame.grid_propagate(False)
 
-        customtkinter.CTkLabel(left_frame, text="Investment Name").grid(row=0, column=0, padx=20, pady=5, sticky="w")
+        customtkinter.CTkLabel(left_frame, font=("Bahnschrift", 30), text="Investment Name").grid(row=0, column=0, padx=20, pady=5, sticky="w")
         self.entry_name = customtkinter.CTkEntry(left_frame)
         self.entry_name.grid(row=1, column=0, padx=20, pady=5, sticky="ew")
 
-        customtkinter.CTkLabel(left_frame, text="Amount").grid(row=2, column=0, padx=20, pady=5, sticky="w")
+        customtkinter.CTkLabel(left_frame, font=("Bahnschrift", 30), text="Amount").grid(row=2, column=0, padx=20, pady=5, sticky="w")
         self.entry_amount = customtkinter.CTkEntry(left_frame)
         self.entry_amount.grid(row=3, column=0, padx=20, pady=5, sticky="ew")
 
@@ -150,7 +159,7 @@ class CertificateofDepositApp:
         period_frame.grid(row=7, column=0, padx=20, pady=10, sticky="nsew")
         period_frame.grid_columnconfigure((0, 1, 2), weight=1)
 
-        customtkinter.CTkLabel(left_frame, text="Time Periods").grid(row=6, column=0, padx=20, pady=5, sticky="w")
+        customtkinter.CTkLabel(left_frame, font=("Bahnschrift", 30), text="Time Periods").grid(row=6, column=0, padx=20, pady=5, sticky="w")
         row = 0
         column = 0
 
@@ -166,7 +175,7 @@ class CertificateofDepositApp:
         addinvestment_button = customtkinter.CTkButton(left_frame,text="Add Investment", fg_color="#06402B", command=self.add_investment)
         addinvestment_button.grid(row=13, column=0, padx=20, pady=10, sticky="ew")
 
-        customtkinter.CTkLabel(left_frame,text="Remove an Investment").grid(row=14, column=0, padx=20, pady=(20, 5), sticky="w")
+        customtkinter.CTkLabel(left_frame, font=("Bahnschrift", 30), text="Remove an Investment").grid(row=14, column=0, padx=20, pady=(20, 5), sticky="w")
         self.entry_remove_name = customtkinter.CTkEntry(left_frame,placeholder_text="Investment name")
         self.entry_remove_name.grid(row=15, column=0, padx=20, pady=5, sticky="ew")
 
@@ -178,12 +187,12 @@ class CertificateofDepositApp:
         self.view_portfolio()
         self.display_frame.after(1000, self.view_portfolio)
 
-        customtkinter.CTkLabel(rightbottom_frame,text="Calculate Return On Investments").grid(row=0, column=0, padx=20, pady=5, sticky="w")
+        customtkinter.CTkLabel(rightbottom_frame, font=("Bahnschrift", 20), text="Calculate Return On Investments").grid(row=0, column=0, padx=20, pady=5, sticky="w")
         calculate_button = customtkinter.CTkButton(rightbottom_frame,text="Calculate Returns", fg_color="#06402B", command=self.calculate_returns)
         calculate_button.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
 
-        self.returns_label = customtkinter.CTkLabel(rightbottom_frame, text="")
-        self.returns_label.grid(row=3, column=0, padx=20, pady=10, sticky="w")
+        self.returns = customtkinter.CTkLabel(rightbottom_frame, font=("Bahnschrift", 20), text="")
+        self.returns.grid(row=3, column=0, padx=20, pady=10, sticky="w")
         rightbottom_frame.grid_columnconfigure(0, weight=1)
 
         returnback_button = customtkinter.CTkButton(self.app,text="Back to Main Menu", fg_color="#06402B", width=800, height=30,command=self.returnback)

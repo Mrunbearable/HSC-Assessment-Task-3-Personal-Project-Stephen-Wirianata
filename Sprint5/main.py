@@ -1,13 +1,19 @@
 import customtkinter
+import requests
+import time
 from datetime import datetime
 from menu import InvestmentMenu
 from cod import CertificateofDepositApp
 from saving import SavingsApp
-from index import IndexApp
-from stock import StockMarketApp
+from index import IndexApp, SYMBOL as INDEX_SYMBOL
+from stock import StockMarketApp, TICKERS as STOCK_TICKERS
 from authentication import AuthenticationSystem
 from leaderboard import LeaderboardApp
 from userdata import load_users, save_users
+
+TWELVEDATA_API_KEY = "91002cdaa44445d99142fd352da2e0dc"
+TWELVEDATA_BASE_URL = "https://api.twelvedata.com"
+PRICE_CACHE_SECONDS = 60
 
 class SmartInvestmentApp:
     def __init__(self):
@@ -24,11 +30,44 @@ class SmartInvestmentApp:
         self.mainportfolio = 500.0
         self.current_user = None
         self.current_user_token = None
+        self.price_cache = {}
 
         self.users_data = load_users()
+        self.current_menu = None
         self.operate_authenticationsystem()
         self.app.after(10000, self.interestautomation)
         self.app.after(300000, self.frequenthistoryrefresh)
+
+    def get_price(self, symbol):
+        now = time.time()
+        cached = self.price_cache.get(symbol)
+        if cached is not None and (now - cached["time"]) < PRICE_CACHE_SECONDS:
+            return cached["price"]
+
+        try:
+            response = requests.get(f"{TWELVEDATA_BASE_URL}/price", params={"symbol": symbol, "apikey": TWELVEDATA_API_KEY},timeout=10,)
+            data = response.json()
+            price = float(data["price"])
+        except Exception as e:
+            print(f"[get_price] Exception fetching {symbol}: {e}")
+            return cached["price"] if cached is not None else 0.0
+
+        self.price_cache[symbol] = {"price": price, "time": now}
+        return price
+
+    def indexfund_value(self):
+        shares = sum(inv.amount for inv in self.indexfund_portfolio if inv.name == INDEX_SYMBOL)
+        if shares <= 0:
+            return 0.0
+        return shares * self.get_price(INDEX_SYMBOL)
+
+    def stockmarket_value(self):
+        total = 0.0
+        for ticker in STOCK_TICKERS:
+            shares = sum(inv.amount for inv in self.stockmarket_portfolio if inv.name == ticker)
+            if shares > 0:
+                total += shares * self.get_price(ticker)
+        return total
 
     def apply_interest(self):
         if not self.current_user_token:
@@ -66,8 +105,8 @@ class SmartInvestmentApp:
     def totalaccountbalance(self):
         savings = sum(inv.amount for inv in self.savings_portfolio)
         cod = sum(inv.amount for inv in self.cod_portfolio)
-        indexfund = sum(inv.amount for inv in self.indexfund_portfolio)
-        stockmarket = sum(inv.amount for inv in self.stockmarket_portfolio)
+        indexfund = self.indexfund_value()
+        stockmarket = self.stockmarket_value()
 
         return self.mainportfolio + savings + cod + indexfund + stockmarket
 
@@ -79,8 +118,8 @@ class SmartInvestmentApp:
 
         savings = sum(inv.amount for inv in self.savings_portfolio)
         cod = sum(inv.amount for inv in self.cod_portfolio)
-        indexfund = sum(inv.amount for inv in self.indexfund_portfolio)
-        stocks = sum(inv.amount for inv in self.stockmarket_portfolio)
+        indexfund = self.indexfund_value()
+        stocks = self.stockmarket_value()
 
         total = self.mainportfolio + savings + cod + indexfund + stocks
 
@@ -97,6 +136,9 @@ class SmartInvestmentApp:
         save_users(self.users_data)
     
     def clear_window(self):
+        if self.current_menu is not None:
+            self.current_menu.active = False
+        self.current_menu = None
         for widget in self.app.winfo_children():
             widget.destroy()
 
@@ -126,7 +168,7 @@ class SmartInvestmentApp:
 
     def operate_menu(self):
         self.clear_window()
-        InvestmentMenu(self)
+        self.current_menu = InvestmentMenu(self)
 
     def start(self):
         self.app.mainloop()

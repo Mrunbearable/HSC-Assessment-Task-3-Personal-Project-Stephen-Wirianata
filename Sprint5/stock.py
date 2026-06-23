@@ -1,5 +1,5 @@
 import customtkinter
-import yfinance as yf
+import requests
 import pandas as pd
 import time
 from datetime import datetime
@@ -10,6 +10,8 @@ from userdata import save_users
 
 TICKERS = ["NVDA", "ALAB", "ORCL", "GOOGL", "SPCX"]
 CACHELIMITSECONDS = 60
+TWELVEDATA_API_KEY = "91002cdaa44445d99142fd352da2e0dc"
+TWELVEDATA_BASE_URL = "https://api.twelvedata.com"
 
 class Investment:
     def __init__(self, name, amount, rate_of_return):
@@ -39,17 +41,29 @@ class StockMarketApp:
             return cached["data"]
 
         try:
-            data = yf.Ticker(ticker).history(period="60d", interval="1d")
+            response = requests.get(
+                f"{TWELVEDATA_BASE_URL}/time_series",
+                params={
+                    "symbol": ticker,
+                    "interval": "1day",
+                    "outputsize": 60,
+                    "apikey": TWELVEDATA_API_KEY,
+                },
+                timeout=10,
+            )
+            data = response.json()
         except Exception as e:
             print(f"[stockdatarequests] Exception fetching {ticker}: {e}")
             return cached["data"] if cached is not None else pd.DataFrame()
 
-        if data.empty:
-            print(f"[stockdatarequests] Empty result for {ticker} (likely rate limited). Using stale cache if available.")
+        if not data or data.get("status") == "error" or "values" not in data:
+            print(f"[stockdatarequests] No data for {ticker}: {data}")
             return cached["data"] if cached is not None else pd.DataFrame()
 
-        dataframe = pd.DataFrame({"4. close": data["Close"]})
-        dataframe.index = pd.to_datetime(dataframe.index).tz_localize(None)
+        values = data["values"]
+        dataframe = pd.DataFrame({
+            "4. close": [float(v["close"]) for v in values],
+        }, index=pd.to_datetime([v["datetime"] for v in values]))
         dataframe = dataframe.sort_index()
 
         self.cache[ticker] = {"data": dataframe, "time": now}
@@ -113,13 +127,13 @@ class StockMarketApp:
         buyingshares = int(self.entry[index].get())
 
         if buyingshares <= 0:
-            print("Enter a valid number of shares")
+            self.status.configure(text="Enter a valid number of shares.", text_color="red")
             return
 
         cost = buyingshares * price
 
         if self.controller.mainportfolio < cost:
-            print("Not enough cash")
+            self.status.configure(text="Not enough cash.", text_color="red")
             return
 
         self.controller.mainportfolio -= cost
@@ -149,7 +163,7 @@ class StockMarketApp:
         total_shares = sum(inv.amount for inv in self.controller.stockmarket_portfolio if inv.name == stock)
 
         if sellingshares > total_shares:
-            print("Not enough shares")
+            self.status.configure(text="Not enough shares to sell.", text_color="red")
             return
 
         remaining = sellingshares
@@ -216,12 +230,12 @@ class StockMarketApp:
             stockframe.grid_columnconfigure(1, weight=1)
             stockframe.grid_rowconfigure(2, weight=1)
 
-            marketprice = customtkinter.CTkLabel(stockframe, text=f"{stock} Price: --", font=("Bahnschrift", 10))
+            marketprice = customtkinter.CTkLabel(stockframe, text=f"{stock} Price: --", font=("Bahnschrift", 25))
             marketprice.grid(row=1, column=0, padx=10)
-            marketgrowth = customtkinter.CTkLabel(stockframe, text="Growth: --", font=("Bahnschrift", 10))
+            marketgrowth = customtkinter.CTkLabel(stockframe, text="Growth: --", font=("Bahnschrift", 25))
             marketgrowth.grid(row=2, column=0, padx=10)
 
-            shares = customtkinter.CTkLabel(stockframe, text="Shares Owned: 0", font=("Bahnschrift", 10))
+            shares = customtkinter.CTkLabel(stockframe, text="Shares Owned: 0", font=("Bahnschrift", 25))
             shares.grid(row=3, column=0, padx=10)
 
             self.shares.append(shares)
@@ -245,6 +259,8 @@ class StockMarketApp:
             self.update_graph(stockframe, stock, i)
             self.currentshares(stock)
 
+        self.status = customtkinter.CTkLabel(self.app, text="")
+        self.status.grid(row=2, column=0, columnspan=len(self.stocks), pady=10)
         returnback_button = customtkinter.CTkButton(self.app,text="Back to Main Menu", fg_color="#06402B", width=1500, height=30,command=self.returnback)
         returnback_button.grid(row=1, column=0, columnspan=5, padx=10)
         self.update_balance()

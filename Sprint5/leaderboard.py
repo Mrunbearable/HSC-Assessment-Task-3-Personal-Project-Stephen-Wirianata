@@ -20,11 +20,7 @@ class LeaderboardApp:
             total = data.get("balances", {}).get("total", 0.0)
             growth_pct = ((total - STARTING_BALANCE) / STARTING_BALANCE) * 100
 
-            rankings.append({
-                "username": username,
-                "total": total,
-                "growth": growth_pct
-            })
+            rankings.append({"username": username, "total": total, "growth": growth_pct})
 
         rankings.sort(key=get_balance_key, reverse=True)
 
@@ -41,18 +37,18 @@ class LeaderboardApp:
             label.pack(pady=20)
             return
 
-        header_text = f"{'Rank':<6}{'Username':<20}{'Balance':<18}{'Growth'}"
-        header_label = customtkinter.CTkLabel(self.list_frame, text=header_text, font=("Bahnschrift", 14, "bold"), text_color="#06402B")
-        header_label.pack(anchor="w", padx=20, pady=(10, 4))
+        headerformat = f"{'Rank':<6}{'Username':<20}{'Balance':<18}{'Growth'}"
+        header = customtkinter.CTkLabel(self.list_frame, text=headerformat, font=("Bahnschrift", 14, "bold"), text_color="#06402B")
+        header.pack(anchor="w", padx=20, pady=(10, 4))
 
         for i, entry in enumerate(rankings, start=1):
-            balance_text = f"${entry['total']:,.2f}"
+            balanceformat = f"${entry['total']:,.2f}"
             sign = "+" if entry["growth"] >= 0 else ""
-            growth_text = f"{sign}{entry['growth']:.2f}%"
+            growthformat = f"{sign}{entry['growth']:.2f}%"
 
-            row_text = f"{str(i) + '.':<6}{entry['username']:<20}{balance_text:<18}{growth_text}"
-            row_label = customtkinter.CTkLabel(self.list_frame, text=row_text, font=("Bahnschrift", 16), text_color="#2B2B2B")
-            row_label.pack(anchor="w", padx=20, pady=8)
+            rowformat = f"{str(i) + '.':<6}{entry['username']:<20}{balanceformat:<18}{growthformat}"
+            row = customtkinter.CTkLabel(self.list_frame, text=rowformat, font=("Bahnschrift", 16), text_color="#2B2B2B")
+            row.pack(anchor="w", padx=20, pady=8)
 
     def returnback(self):
         for widget in self.app.winfo_children():
@@ -65,8 +61,8 @@ class LeaderboardApp:
         main_frame.grid_columnconfigure(0, weight=1)
         main_frame.grid_propagate(False)
 
-        self.title_label = customtkinter.CTkLabel(main_frame, text="Leaderboard", font=("Bahnschrift", 30), text_color="#06402B")
-        self.title_label.grid(row=0, column=0, padx=20, pady=(30, 10), sticky="w")
+        self.title = customtkinter.CTkLabel(main_frame, text="Leaderboard", font=("Bahnschrift", 30), text_color="#06402B")
+        self.title.grid(row=0, column=0, padx=20, pady=(30, 10), sticky="w")
 
         self.list_frame = customtkinter.CTkFrame(main_frame, fg_color="#F7E7CE")
         self.list_frame.grid(row=1, column=0, padx=20, pady=20, sticky="nsew")
