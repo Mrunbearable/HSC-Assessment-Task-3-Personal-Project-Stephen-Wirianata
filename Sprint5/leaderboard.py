@@ -2,7 +2,7 @@ import customtkinter
 
 STARTING_BALANCE = 500
 
-def get_balance_key(entry):
+def obtainbalancekey(entry):
     return entry["total"]
 
 class LeaderboardApp:
@@ -18,11 +18,11 @@ class LeaderboardApp:
         for user_id, data in users.items():
             username = data.get("username", "Unknown")
             total = data.get("balances", {}).get("total", 0.0)
-            growth_pct = ((total - STARTING_BALANCE) / STARTING_BALANCE) * 100
+            growth = ((total - STARTING_BALANCE) / STARTING_BALANCE) * 100
 
-            rankings.append({"username": username, "total": total, "growth": growth_pct})
+            rankings.append({"username": username, "total": total, "growth": growth})
 
-        rankings.sort(key=get_balance_key, reverse=True)
+        rankings.sort(key=obtainbalancekey, reverse=True)
 
         return rankings
 

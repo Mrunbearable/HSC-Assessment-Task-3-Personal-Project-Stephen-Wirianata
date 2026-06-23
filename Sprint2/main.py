@@ -1,16 +1,22 @@
+# Introduction of a GUI, from a console UI
+# Imports Custotkinter library, to create the GUI for the invest app
+# This will allow users to interact with the app in a more user-friendly way, making it easier to manage their investments and view their portfolio.
 import customtkinter
 
+#Introduction of Object-Oriented Programming, creating an Investment class to represent each investment in the portfolio
 class Investment:
+    #Defining attributes of the Investment class
     def __init__(self, name, amount, rate_of_return):
         self.name = name
         self.amount = float(amount)
         self.rate_of_return = float(rate_of_return) 
-
+    # A function to calculate the future value of investment, compounding function which is important for app purposes
     def calculate_return(self, years):
         return self.amount * ((1 + self.rate_of_return/100) ** years)
 
+# Another class created using OOP, to represent the main application and its functionalities, allowing for better organization and modularity of the code.
 class InvestmentApp:
-
+    #defining attributes of the InvestmentApp class, including the main portfolio, GUI Specifications and the user's current investments
     def __init__(self):
         self.app = customtkinter.CTk()
         self.app.title("SMART INVESTMENTS")
@@ -21,6 +27,7 @@ class InvestmentApp:
 
         self.app.configure(fg_color="#F7E7CE")
 
+    # A function to add an investment to the portfolio, allowing users to input the details of their investment and have it added to their portfolio for management and tracking purposes.
     def add_investment(self):
         name = self.entry_name.get()
         amount = self.entry_amount.get()

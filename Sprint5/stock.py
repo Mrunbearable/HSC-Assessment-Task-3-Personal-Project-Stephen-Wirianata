@@ -24,6 +24,7 @@ class StockMarketApp:
     def __init__(self, controller):
         self.controller = controller
         self.app = controller.app
+        self.active = True
 
         self.stocks = TICKERS
         self.marketpricestocks = []
@@ -43,14 +44,7 @@ class StockMarketApp:
         try:
             response = requests.get(
                 f"{TWELVEDATA_BASE_URL}/time_series",
-                params={
-                    "symbol": ticker,
-                    "interval": "1day",
-                    "outputsize": 60,
-                    "apikey": TWELVEDATA_API_KEY,
-                },
-                timeout=10,
-            )
+                params={"symbol": ticker,"interval": "1day","outputsize": 60,"apikey": TWELVEDATA_API_KEY,},timeout=10,)
             data = response.json()
         except Exception as e:
             print(f"[stockdatarequests] Exception fetching {ticker}: {e}")
@@ -61,9 +55,7 @@ class StockMarketApp:
             return cached["data"] if cached is not None else pd.DataFrame()
 
         values = data["values"]
-        dataframe = pd.DataFrame({
-            "4. close": [float(v["close"]) for v in values],
-        }, index=pd.to_datetime([v["datetime"] for v in values]))
+        dataframe = pd.DataFrame({"4. close": [float(v["close"]) for v in values],}, index=pd.to_datetime([v["datetime"] for v in values]))
         dataframe = dataframe.sort_index()
 
         self.cache[ticker] = {"data": dataframe, "time": now}
@@ -86,11 +78,15 @@ class StockMarketApp:
         return figure, axis, canvas
 
     def update_graph(self, frame, ticker, index):
+        if not self.active or not self.controller.running:
+            return
+
         data = self.stockdatarequests(ticker)
 
         if data.empty:
             self.marketpricestocks[index].configure(text=f"{ticker} Price: unavailable")
-            frame.after(300000, self.update_graph, frame, ticker, index)
+            if self.active and self.controller.running:
+                frame.after(300000, self.update_graph, frame, ticker, index)
             return
 
         graph = self.graphs[index]
@@ -114,7 +110,8 @@ class StockMarketApp:
         figure.autofmt_xdate()
         canvas.draw()
 
-        frame.after(300000, self.update_graph, frame, ticker, index)
+        if self.active and self.controller.running:
+            frame.after(300000, self.update_graph, frame, ticker, index)
 
     def buy(self, stock):
         price = self.get_latest_price(stock)
@@ -157,9 +154,7 @@ class StockMarketApp:
             return
 
         index = self.stocks.index(stock)
-
         sellingshares = int(self.entry[index].get())
-
         total_shares = sum(inv.amount for inv in self.controller.stockmarket_portfolio if inv.name == stock)
 
         if sellingshares > total_shares:
@@ -180,14 +175,10 @@ class StockMarketApp:
                 remaining = 0
 
         self.controller.stockmarket_portfolio = new_portfolio
-
         self.controller.mainportfolio += sellingshares * price
         self.controller.frequentdatarefresh()
-
         self.controller.users_data[self.controller.current_user_token]["history"].append((datetime.now().strftime("%Y-%m-%d %H:%M:%S"),self.controller.totalaccountbalance()))
-
         save_users(self.controller.users_data)
-
         self.currentshares(stock)
         self.update_balance()
 
@@ -210,9 +201,9 @@ class StockMarketApp:
         self.balance.configure(text=f"Portfolio Value: ${total_value:.2f}")
 
     def returnback(self):
+        self.active = False
         for widget in self.app.winfo_children():
             widget.destroy()
-
         self.controller.operate_menu()
 
     def menuGui(self):

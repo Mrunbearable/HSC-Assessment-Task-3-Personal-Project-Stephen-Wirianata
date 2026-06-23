@@ -69,10 +69,11 @@ class SavingsApp:
         self.balance.configure(text=f"Savings: ${balance:.2f}")
 
     def autorefresh_balance(self):
-        if not self.active:
+        if not self.active or not self.controller.running:
             return
         self.update_balance()
-        self.app.after(10000, self.autorefresh_balance)
+        if self.active and self.controller.running:
+            self.app.after(10000, self.autorefresh_balance)
 
     def returnback(self):
         self.active = False
@@ -88,9 +89,9 @@ class SavingsApp:
 
         self.balance = customtkinter.CTkLabel(savings_frame, text="Savings: $0.00", font=("Bahnschrift", 35))
         self.balance.grid(row=0, column=0, pady=(60, 10))
-        enter = customtkinter.CTkLabel(savings_frame, text="Enter Currency", font=("Bahnschrift", 10))
+        enter = customtkinter.CTkLabel(savings_frame, text="Enter Currency", font=("Bahnschrift", 25))
         enter.grid(row=1, column=0, pady=10)
-        interestrate = customtkinter.CTkLabel(savings_frame, text="Current interest rate: 5%", font=("Bahnschrift", 10))
+        interestrate = customtkinter.CTkLabel(savings_frame, text="Current interest rate: 5%", font=("Bahnschrift", 25))
         interestrate.grid(row=2, column=0, pady=10)
 
         self.amount_entry = customtkinter.CTkEntry(savings_frame, placeholder_text="Enter amount")

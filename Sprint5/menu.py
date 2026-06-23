@@ -41,8 +41,8 @@ class InvestmentMenu:
     def update_breakdown(self):
         savings = sum(inv.amount for inv in self.controller.savings_portfolio)
         cod = sum(inv.amount for inv in self.controller.cod_portfolio)
-        indexfund = sum(inv.amount for inv in self.controller.indexfund_portfolio)
-        stocks = sum(inv.amount for inv in self.controller.stockmarket_portfolio)
+        indexfund = self.controller.indexfund_value()
+        stocks = self.controller.stockmarket_value()
 
         self.freecash.configure(text=f"Free Cash: ${self.controller.mainportfolio:,.2f}")
         self.savings.configure(text=f"Savings: ${savings:,.2f}")
@@ -51,33 +51,33 @@ class InvestmentMenu:
         self.stocks.configure(text=f"Stock Market: ${stocks:,.2f}")
 
     def balancerefresh(self):
-        if not self.active:
+        if not self.active or not self.controller.running:
             return
         self.update_balance()
         self.update_breakdown()
-        self.app.after(10000, self.balancerefresh)
+        if self.active and self.controller.running:
+            self.app.after(10000, self.balancerefresh)
 
     def display_userinfo(self):
         username = self.controller.current_user
         self.username.configure(text=f"Username: {username}")
 
     def graphrefresh(self):
-        if not self.active:
+        if not self.active or not self.controller.running:
             return
 
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
 
         self.show_graph(self.graph_frame)
-        self.app.after(300000, self.graphrefresh)
+
+        if self.active and self.controller.running:
+            self.app.after(300000, self.graphrefresh)
 
     def logout(self):
         for widget in self.app.winfo_children():
             widget.destroy()
         self.controller.operate_authenticationsystem()
-
-    def exit(self):
-        self.app.destroy()
 
     def menuGui(self):
         self.controller.clear_window()
@@ -107,33 +107,26 @@ class InvestmentMenu:
         individualstocks_button.grid(row=4, column=0, padx=20, pady=10, sticky="ew")
 
         leaderboard_button = customtkinter.CTkButton(self.app, text="Leaderboard", fg_color="#06402B", width=120, command=self.controller.operate_leaderboard)
-        leaderboard_button.place(relx=0.85, rely=0.02, anchor="ne")
-        exit_button = customtkinter.CTkButton(self.app, text="Exit", fg_color="#06402B", width=120, command=self.exit)
-        exit_button.place(relx=0.75, rely=0.02, anchor="ne")
+        leaderboard_button.place(relx=0.80, rely=0.02, anchor="ne")
+        exit_button = customtkinter.CTkButton(self.app, text="Exit", fg_color="#06402B", width=120, command=self.controller.on_close)
+        exit_button.place(relx=0.70, rely=0.02, anchor="ne")
         logout_button = customtkinter.CTkButton(self.app, text="Logout", fg_color="#06402B", width=120, command=self.logout)
-        logout_button.place(relx=0.65, rely=0.02, anchor="ne")
+        logout_button.place(relx=0.60, rely=0.02, anchor="ne")
 
         self.accountbalance = customtkinter.CTkLabel(self.left_frame, text="Account Balance: $0.00", font=("Banschrift", 16, "bold"))
         self.accountbalance.grid(row=2, column=0, padx=10, pady=(10, 4), sticky="w")
-
         self.username = customtkinter.CTkLabel(self.left_frame, text="Username: ", font=("Banschrift", 16))
         self.username.grid(row=3, column=0, padx=10, pady=(0, 10), sticky="w")
-
         self.freecash = customtkinter.CTkLabel(self.left_frame, text="Free Cash: $0.00", font=("Banschrift", 14))
         self.freecash.grid(row=4, column=0, padx=10, pady=2, sticky="w")
-
         self.savings = customtkinter.CTkLabel(self.left_frame, text="Savings: $0.00", font=("Banschrift", 14))
         self.savings.grid(row=5, column=0, padx=10, pady=2, sticky="w")
-
         self.cod = customtkinter.CTkLabel(self.left_frame, text="Certificate of Deposit: $0.00", font=("Banschrift", 14))
         self.cod.grid(row=6, column=0, padx=10, pady=2, sticky="w")
-
         self.indexfund = customtkinter.CTkLabel(self.left_frame, text="Index Fund: $0.00", font=("Banschrift", 14))
         self.indexfund.grid(row=7, column=0, padx=10, pady=2, sticky="w")
-
         self.stocks = customtkinter.CTkLabel(self.left_frame, text="Stock Market: $0.00", font=("Banschrift", 14))
         self.stocks.grid(row=8, column=0, padx=10, pady=(2, 10), sticky="w")
-
         self.graph_frame = customtkinter.CTkFrame(self.left_frame)
         self.graph_frame.grid(row=1, column=0, padx=20, pady=20, sticky="nsew")
 

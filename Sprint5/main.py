@@ -16,7 +16,7 @@ TWELVEDATA_BASE_URL = "https://api.twelvedata.com"
 PRICE_CACHE_SECONDS = 60
 
 class SmartInvestmentApp:
-    def __init__(self):
+    def __init__(self): 
         self.app = customtkinter.CTk()
         self.app.title("SMART INVESTMENTS")
         self.app.geometry("1400x1000")
@@ -34,9 +34,17 @@ class SmartInvestmentApp:
 
         self.users_data = load_users()
         self.current_menu = None
+        self.running = True
+        self.app.protocol("WM_DELETE_WINDOW", self.on_close)
         self.operate_authenticationsystem()
         self.app.after(10000, self.interestautomation)
         self.app.after(300000, self.frequenthistoryrefresh)
+
+    def on_close(self):
+        self.running = False
+        if self.current_menu is not None:
+            self.current_menu.active = False
+        self.app.quit()
 
     def get_price(self, symbol):
         now = time.time()
@@ -45,7 +53,7 @@ class SmartInvestmentApp:
             return cached["price"]
 
         try:
-            response = requests.get(f"{TWELVEDATA_BASE_URL}/price", params={"symbol": symbol, "apikey": TWELVEDATA_API_KEY},timeout=10,)
+            response = requests.get(f"{TWELVEDATA_BASE_URL}/price", params={"symbol": symbol, "apikey": TWELVEDATA_API_KEY}, timeout=10)
             data = response.json()
             price = float(data["price"])
         except Exception as e:
@@ -87,6 +95,9 @@ class SmartInvestmentApp:
         save_users(self.users_data)
 
     def frequenthistoryrefresh(self):
+        if not self.running:
+            return
+
         if self.current_user_token:
             self.users_data[self.current_user_token]["history"].append(
                 (
@@ -96,11 +107,15 @@ class SmartInvestmentApp:
             )
             save_users(self.users_data)
 
-        self.app.after(300000, self.frequenthistoryrefresh)
+        if self.running:
+            self.app.after(300000, self.frequenthistoryrefresh)
 
     def interestautomation(self):
+        if not self.running:
+            return
         self.apply_interest()
-        self.app.after(10000, self.interestautomation)
+        if self.running:
+            self.app.after(10000, self.interestautomation)
 
     def totalaccountbalance(self):
         savings = sum(inv.amount for inv in self.savings_portfolio)

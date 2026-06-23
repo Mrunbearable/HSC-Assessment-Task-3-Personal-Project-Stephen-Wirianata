@@ -31,6 +31,8 @@ class CertificateofDepositApp:
         self.portfolio = controller.cod_portfolio
         self.time_options = {"6 months": 0.5,"12 months": 1,"5 years": 5,"10 years": 10,"20 years": 20} 
         self.selected_years = 1
+        self.active = True
+        self.returns_calculated = False
 
         self.menuGui()
 
@@ -77,6 +79,9 @@ class CertificateofDepositApp:
         return True
 
     def view_portfolio(self):
+        if not self.active or not self.controller.running:
+            return
+
         for widget in self.display_frame.winfo_children():
             widget.destroy()
             
@@ -94,6 +99,9 @@ class CertificateofDepositApp:
             bar.pack(fill="x", padx=10, pady=(0, 8))
 
     def calculate_returns(self):
+        if self.returns_calculated:
+            return
+
         returns = []
         for investment in self.portfolio:
             investment.compounded = False 
@@ -101,6 +109,8 @@ class CertificateofDepositApp:
             returns.append(f"{investment.name}: ${investment.amount:,.2f}")
 
         self.returns.configure(text="\n".join(returns))
+        self.returns_calculated = True
+        self.calculate_button.configure(state="disabled", text="Returns Calculated")
 
     def remove_investment(self):
         name = self.entry_remove_name.get().strip()
@@ -116,15 +126,21 @@ class CertificateofDepositApp:
                 return
     
     def verify_cod(self):
+        if not self.active or not self.controller.running:
+            return
+
         self.processfinished()
         self.view_portfolio()
-        self.display_frame.after(1000, self.verify_cod)
+
+        if self.active and self.controller.running:
+            self.display_frame.after(1000, self.verify_cod)
         
     def set_years(self, option):    
         self.selected_years = self.time_options[option]
         self.returns.configure(text=f"Selected: {option}")
 
     def returnback(self):
+        self.active = False
         for widget in self.app.winfo_children():
             widget.destroy()
         self.controller.operate_menu()
@@ -147,11 +163,11 @@ class CertificateofDepositApp:
         rightbottom_frame.grid_columnconfigure(0, weight=1)
         rightbottom_frame.grid_propagate(False)
 
-        customtkinter.CTkLabel(left_frame, font=("Bahnschrift", 30), text="Investment Name").grid(row=0, column=0, padx=20, pady=5, sticky="w")
+        customtkinter.CTkLabel(left_frame, font=("Banschrift", 20), text="Investment Name").grid(row=0, column=0, padx=20, pady=5, sticky="w")
         self.entry_name = customtkinter.CTkEntry(left_frame)
         self.entry_name.grid(row=1, column=0, padx=20, pady=5, sticky="ew")
 
-        customtkinter.CTkLabel(left_frame, font=("Bahnschrift", 30), text="Amount").grid(row=2, column=0, padx=20, pady=5, sticky="w")
+        customtkinter.CTkLabel(left_frame, font=("Banschrift", 20), text="Amount").grid(row=2, column=0, padx=20, pady=5, sticky="w")
         self.entry_amount = customtkinter.CTkEntry(left_frame)
         self.entry_amount.grid(row=3, column=0, padx=20, pady=5, sticky="ew")
 
@@ -159,7 +175,7 @@ class CertificateofDepositApp:
         period_frame.grid(row=7, column=0, padx=20, pady=10, sticky="nsew")
         period_frame.grid_columnconfigure((0, 1, 2), weight=1)
 
-        customtkinter.CTkLabel(left_frame, font=("Bahnschrift", 30), text="Time Periods").grid(row=6, column=0, padx=20, pady=5, sticky="w")
+        customtkinter.CTkLabel(left_frame, font=("Banschrift", 20), text="Time Periods").grid(row=6, column=0, padx=20, pady=5, sticky="w")
         row = 0
         column = 0
 
@@ -175,7 +191,7 @@ class CertificateofDepositApp:
         addinvestment_button = customtkinter.CTkButton(left_frame,text="Add Investment", fg_color="#06402B", command=self.add_investment)
         addinvestment_button.grid(row=13, column=0, padx=20, pady=10, sticky="ew")
 
-        customtkinter.CTkLabel(left_frame, font=("Bahnschrift", 30), text="Remove an Investment").grid(row=14, column=0, padx=20, pady=(20, 5), sticky="w")
+        customtkinter.CTkLabel(left_frame, font=("Banschrift", 20), text="Remove an Investment").grid(row=14, column=0, padx=20, pady=(20, 5), sticky="w")
         self.entry_remove_name = customtkinter.CTkEntry(left_frame,placeholder_text="Investment name")
         self.entry_remove_name.grid(row=15, column=0, padx=20, pady=5, sticky="ew")
 
@@ -185,16 +201,16 @@ class CertificateofDepositApp:
         self.display_frame = customtkinter.CTkFrame(righttop_frame)
         self.display_frame.grid(row=0,column=0,padx=10,pady=10,sticky="nsew")
         self.view_portfolio()
-        self.display_frame.after(1000, self.view_portfolio)
 
-        customtkinter.CTkLabel(rightbottom_frame, font=("Bahnschrift", 20), text="Calculate Return On Investments").grid(row=0, column=0, padx=20, pady=5, sticky="w")
+        customtkinter.CTkLabel(rightbottom_frame, font=("Banschrift", 20), text="Calculate Return On Investments").grid(row=0, column=0, padx=20, pady=5, sticky="w")
         calculate_button = customtkinter.CTkButton(rightbottom_frame,text="Calculate Returns", fg_color="#06402B", command=self.calculate_returns)
         calculate_button.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
+        self.calculate_button = calculate_button
 
-        self.returns = customtkinter.CTkLabel(rightbottom_frame, font=("Bahnschrift", 20), text="")
+        self.returns = customtkinter.CTkLabel(rightbottom_frame, font=("Banschrift", 35), text="")
         self.returns.grid(row=3, column=0, padx=20, pady=10, sticky="w")
         rightbottom_frame.grid_columnconfigure(0, weight=1)
 
         returnback_button = customtkinter.CTkButton(self.app,text="Back to Main Menu", fg_color="#06402B", width=800, height=30,command=self.returnback)
-        returnback_button.place(x=640, y=735)
+        returnback_button.place(x=650, y=735)
         self.verify_cod()

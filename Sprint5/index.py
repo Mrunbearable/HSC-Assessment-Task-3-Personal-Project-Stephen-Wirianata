@@ -21,14 +21,14 @@ class IndexApp:
     def __init__(self, controller):
         self.controller = controller
         self.app = controller.app
+        self.active = True
         self.menuGui()
         self.update_balance()
 
     def indexdatarequests(self):
         try:
             response = requests.get(
-                f"{TWELVEDATA_BASE_URL}/time_series",
-                params={"symbol": SYMBOL,"interval": "1day","outputsize": 60,"apikey": TWELVEDATA_API_KEY,},timeout=10,)
+                f"{TWELVEDATA_BASE_URL}/time_series", params={ "symbol": SYMBOL, "interval": "1day", "outputsize": 60, "apikey": TWELVEDATA_API_KEY,}, timeout=10,)
             data = response.json()
         except Exception as e:
             print(f"[indexdatarequests] Exception fetching data: {e}")
@@ -39,9 +39,7 @@ class IndexApp:
             return pd.DataFrame()
 
         values = data["values"]
-        dataframe = pd.DataFrame({
-            "4. close": [float(v["close"]) for v in values],
-        }, index=pd.to_datetime([v["datetime"] for v in values]))
+        dataframe = pd.DataFrame({"4. close": [float(v["close"]) for v in values],}, index=pd.to_datetime([v["datetime"] for v in values]))
         dataframe = dataframe.sort_index()
 
         return dataframe
@@ -53,9 +51,13 @@ class IndexApp:
         self.canvas.get_tk_widget().pack(fill="both", expand=True)
 
     def update_graph(self, frame):
+        if not self.active or not self.controller.running:
+            return
+
         data = self.indexdatarequests()
         if data.empty:
-            frame.after(300000, self.update_graph, frame)
+            if self.active and self.controller.running:
+                frame.after(300000, self.update_graph, frame)
             return
 
         latest_price = data.iloc[-1]["4. close"]
@@ -74,9 +76,10 @@ class IndexApp:
         self.figure.autofmt_xdate()
         self.canvas.draw()
 
-        frame.after(300000, self.update_graph, frame)
+        if self.active and self.controller.running:
+            frame.after(300000, self.update_graph, frame)
 
-    def get_latest_price(self, data):
+    def obtainlatestprice(self, data):
         return float(data["4. close"].iloc[-1])
 
     def buy(self):
@@ -148,6 +151,7 @@ class IndexApp:
         self.balance.configure(text=f"VOO Value: ${value:.2f} ({shares:.0f} shares)")
 
     def returnback(self):
+        self.active = False
         for widget in self.app.winfo_children():
             widget.destroy()
         self.controller.operate_menu()
@@ -164,14 +168,14 @@ class IndexApp:
         right_frame.grid_propagate(False)
         right_frame.grid_columnconfigure(0, weight=1)
         
-        self.balance = customtkinter.CTkLabel(right_frame,text="Portfolio: $0.00",font=("Bahnschrift", 35))
+        self.balance = customtkinter.CTkLabel(right_frame,text="Portfolio: $0.00",font=("Bahnschrift", 30))
         self.balance.grid(row=0, column=0, pady=10)
 
-        entry = customtkinter.CTkLabel(right_frame, font=("Bahnschrift", 20), text="Enter Number of Wanted Shares")
+        entry = customtkinter.CTkLabel(right_frame, text="Enter Number of Wanted Shares", font=("Bahnschrift", 20))
         entry.grid(row=1, column=0, pady=10)
         self.marketprice = customtkinter.CTkLabel(right_frame,text="Current market price: --",font=("Bahnschrift", 20))
         self.marketprice.grid(row=2, column=0, pady=10)
-        self.marketgrowth = customtkinter.CTkLabel(right_frame, font=("Bahnschrift", 20), text="Current market growth: {}")
+        self.marketgrowth = customtkinter.CTkLabel(right_frame, text="Current market growth: {}", font=("Bahnschrift", 20))
         self.marketgrowth.grid(row=3, column=0, pady=10)
         self.indexentry = customtkinter.CTkEntry(right_frame, placeholder_text="Enter amount")
         self.indexentry.grid(row=4, column=0, pady=10)
@@ -183,11 +187,11 @@ class IndexApp:
         withdraw_button = customtkinter.CTkButton(savingsbutton_frame, text="Sell", fg_color="#06402B", command=self.sell)
         withdraw_button.grid(row=0, column=1, padx=6)
 
-        self.status = customtkinter.CTkLabel(self.app, text="", font=("Bahnschrift", 20))
+        self.status = customtkinter.CTkLabel(self.app, text="")
         self.status.grid(row=2, column=0, columnspan=2, pady=10)
 
         returnback_button = customtkinter.CTkButton(self.app,text="Back to Main Menu", fg_color="#06402B", width=800, height=30,command=self.returnback)
-        returnback_button.place(x=500, y=720)
+        returnback_button.place(x=520, y=740)
 
         self.setup_graph(left_frame)
         self.update_graph(left_frame)
