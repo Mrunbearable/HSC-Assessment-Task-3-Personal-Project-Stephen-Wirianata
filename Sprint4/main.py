@@ -22,7 +22,7 @@ class SmartInvestmentApp:
         self.app.configure(fg_color="#F7E7CE")  
 
         self.operate_menu()
-        self.app.after(10000, self.interestautomation)
+        self.app.after(300000, self.interestautomation)
 
     def apply_interest(self):
         for inv in self.savings_portfolio:
@@ -39,7 +39,7 @@ class SmartInvestmentApp:
 
     def interestautomation(self):
         self.apply_interest()
-        self.app.after(10000, self.interestautomation) 
+        self.app.after(300000, self.interestautomation) 
 
     def totalaccountbalance(self):
         savings = sum(inv.amount for inv in self.savings_portfolio)
