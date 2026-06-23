@@ -88,9 +88,9 @@ class SavingsApp:
 
         self.balance = customtkinter.CTkLabel(savings_frame, text="Savings: $0.00", font=("Bahnschrift", 35))
         self.balance.grid(row=0, column=0, pady=(60, 10))
-        enter = customtkinter.CTkLabel(savings_frame, text="Enter Currency", font=("Bahnschrift", 20))
+        enter = customtkinter.CTkLabel(savings_frame, text="Enter Currency", font=("Bahnschrift", 10))
         enter.grid(row=1, column=0, pady=10)
-        interestrate = customtkinter.CTkLabel(savings_frame, text="Current interest rate: 5%", font=("Bahnschrift", 20))
+        interestrate = customtkinter.CTkLabel(savings_frame, text="Current interest rate: 5%", font=("Bahnschrift", 10))
         interestrate.grid(row=2, column=0, pady=10)
 
         self.amount_entry = customtkinter.CTkEntry(savings_frame, placeholder_text="Enter amount")
@@ -101,7 +101,7 @@ class SavingsApp:
         deposit_button.grid(row=0, column=0, padx=6)
         withdraw_button = customtkinter.CTkButton(savingsbutton_frame, text="Withdraw", fg_color="#06402B", command=self.withdraw)
         withdraw_button.grid(row=0, column=1, padx=6)
-        self.status = customtkinter.CTkLabel(savings_frame, text="", font=("Bahnschrift", 20))
+        self.status = customtkinter.CTkLabel(savings_frame, text="")
         self.status.grid(row=5, column=0, pady=10)
 
         returnback_button = customtkinter.CTkButton(self.app,text="Back to Main Menu", fg_color="#06402B", width=1500, height=30,command=self.returnback)

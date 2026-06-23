@@ -28,14 +28,7 @@ class IndexApp:
         try:
             response = requests.get(
                 f"{TWELVEDATA_BASE_URL}/time_series",
-                params={
-                    "symbol": SYMBOL,
-                    "interval": "1day",
-                    "outputsize": 60,
-                    "apikey": TWELVEDATA_API_KEY,
-                },
-                timeout=10,
-            )
+                params={"symbol": SYMBOL,"interval": "1day","outputsize": 60,"apikey": TWELVEDATA_API_KEY,},timeout=10,)
             data = response.json()
         except Exception as e:
             print(f"[indexdatarequests] Exception fetching data: {e}")
