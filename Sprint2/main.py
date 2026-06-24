@@ -29,44 +29,58 @@ class InvestmentApp:
 
     # A function to add an investment to the portfolio, allowing users to input the details of their investment and have it added to their portfolio for management and tracking purposes.
     def add_investment(self):
+        # User inputs for investment details
         name = self.entry_name.get()
         amount = self.entry_amount.get()
         rate_of_return = self.entry_rateofreturn.get()
 
+        # Saves details for specfic investments and adds to porfolio list
         new_investment = Investment(name, amount, rate_of_return)
         self.portfolio.append(new_investment)
         self.view_portfolio()
 
+        # Clears the input fields after adding an investment, improving user experience by allowing them to easily add multiple investments without having to manually clear the fields each time.
         for entry in [self.entry_name, self.entry_amount, self.entry_rateofreturn]:
             entry.delete(0, 'end')
 
+    # A function to view the current portfolio, displaying the details of each investment in a user-friendly format, allowing users to easily see and manage their investments.
+    #Clears widgets before displaying the portfolio, ensuring that the display is updated correctly and prevents any overlapping or cluttered information on the screen.
     def view_portfolio(self):
         for widget in self.display_frame.winfo_children():
             widget.destroy()
-            
+
+        # Checks if the portfolio is empty and displays a message if it is, providing feedback to the user 
         if not self.portfolio:
             label = customtkinter.CTkLabel(self.display_frame, text="Your portfolio is empty.", font=("Banschrift", 14), text_color="#2B2B2B")
             label.pack(pady=20)
             return
 
+        # Displays each investment in the portfolio with its details, allowing users to easily see and manage their investments in a clear and organized manner.
         for i, investment in enumerate(self.portfolio, start=1):
             text = f"{i}. {investment.name} - ${investment.amount:,.2f} ({investment.rate_of_return}%)"
             label = customtkinter.CTkLabel(self.display_frame, text=text, font=("Banschrift", 12), text_color="#2B2B2B")
             label.pack(anchor="w", padx=10, pady=2)
 
+    # a function to calculate the returns on investments, allowing users to input the number of years and see the future value of their investmens
+    # creates a returns list
     def calculate_returns(self):
             years = int(self.entry_years.get())
             returns = []
             
+            # a for loop to calculate the future value of each investment
+            # prints each invesment's name, amount and future value after the specified number of years
             for investment in self.portfolio:
                 future_value = investment.calculate_return(years)
                 print(f"{investment.name}{investment.amount:.2f} After {years} years: {future_value:.2f}")
                 returns.append(f"{investment.name}: ${future_value:.2f}")
                 self.returns_label.configure(text="\n".join(returns))
 
+    # A function to remove investments from the portfolio
     def remove_investment(self):
+        # Enter the name of invesment
         name = self.entry_remove_name.get().strip()
 
+        # Finds the name in lowercase in the portolio and remove it
         for investment in self.portfolio:
             if investment.name.lower() == name.lower():
                 self.portfolio.remove(investment)
@@ -74,8 +88,10 @@ class InvestmentApp:
                 self.entry_remove_name.delete(0, "end")
                 return
 
+    #Creates the menu GUI, allowing users to interact with graphical user interface
     def menuGui(self):
         
+        #Creates frames for the layout of the GUI, organizing the different sections of the interface for better user experience and navigation.
         left_frame = customtkinter.CTkFrame(self.app, fg_color="#D2C3A9", width=600, height=750)
         left_frame.grid(row=1, column=0, rowspan=2, padx=(20, 10), pady=20, sticky="nsew")
         left_frame.grid_columnconfigure(0, weight=1)
@@ -93,6 +109,7 @@ class InvestmentApp:
         rightbottom_frame.grid_columnconfigure(0, weight=1)
         rightbottom_frame.grid_propagate(False)
 
+        #Creates the labels, entry fields and buttons for the GUI, allowing users to input their investment details, view their portfolio, calculate returns, and remove investments in an interactive and user-friendly way.
         customtkinter.CTkLabel(left_frame, text="Investment Name").grid(row=0, column=0, padx=20, pady=5, sticky="w")
         self.entry_name = customtkinter.CTkEntry(left_frame)
         self.entry_name.grid(row=1, column=0, padx=20, pady=5, sticky="ew")
@@ -115,6 +132,7 @@ class InvestmentApp:
         removeinvestment_button = customtkinter.CTkButton(left_frame,text="Remove Investment",command=self.remove_investment)
         removeinvestment_button.grid(row=9, column=0, padx=20, pady=10, sticky="ew")
 
+        # A special frame to store buttons
         self.display_frame = customtkinter.CTkFrame(righttop_frame)
         self.display_frame.grid(row=0,column=0,padx=10,pady=10,sticky="nsew")
         self.view_portfolio()
@@ -130,8 +148,10 @@ class InvestmentApp:
         self.returns_label.grid(row=3, column=0, padx=20, pady=10, sticky="w")
         rightbottom_frame.grid_columnconfigure(0, weight=1)
 
+        #Run the application
         self.app.mainloop()
 
+#If the applications is running, run the menu GUI, allowing users to interact with the application and manage their investments through the graphical user interface.
 if __name__ == "__main__":
 
     app = InvestmentApp()
