@@ -117,6 +117,7 @@ class CertificateofDepositApp:
 
         for investment in self.portfolio:
             if investment.name.lower() == name.lower():
+                self.controller.mainportfolio += investment.amount
                 self.portfolio.remove(investment)
                 self.controller.frequentdatarefresh()
                 self.controller.users_data[self.controller.current_user_token]["history"].append((datetime.now().strftime("%Y-%m-%d %H:%M:%S"),sum(inv.amount for inv in self.controller.cod_portfolio)))

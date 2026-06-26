@@ -91,13 +91,13 @@ class IndexApp:
         shares = int(self.indexentry.get())
 
         if shares <= 0:
-            print("Enter valid shares")
+            self.status.configure(text="Enter valid shares.", text_color="red")
             return
 
         cost = shares * price
 
         if self.controller.mainportfolio < cost:
-            print("Not enough cash in main portfolio")
+            self.status.configure(text="Not enough cash in main portfolio.", text_color="red")
             return
 
         self.controller.mainportfolio -= cost
@@ -140,12 +140,14 @@ class IndexApp:
         save_users(self.controller.users_data)
         self.update_balance()
         
-    def update_balance(self):
-        data = self.indexdatarequests()
-        if data.empty:
-            return
+    def update_balance(self, data=None, price=None):
+        if data is None:
+            data = self.indexdatarequests()
+            if data.empty:
+                return
+        if price is None:
+            price = float(data["4. close"].iloc[-1])
 
-        price = float(data["4. close"].iloc[-1])
         shares = sum(inv.amount for inv in self.controller.indexfund_portfolio if inv.name == SYMBOL)
         value = shares * price
         self.balance.configure(text=f"VOO Value: ${value:.2f} ({shares:.0f} shares)")
@@ -187,8 +189,8 @@ class IndexApp:
         withdraw_button = customtkinter.CTkButton(savingsbutton_frame, text="Sell", fg_color="#06402B", command=self.sell)
         withdraw_button.grid(row=0, column=1, padx=6)
 
-        self.status = customtkinter.CTkLabel(self.app, text="")
-        self.status.grid(row=2, column=0, columnspan=2, pady=10)
+        self.status = customtkinter.CTkLabel(right_frame, text="")
+        self.status.grid(row=7, column=0, columnspan=2, pady=10)
 
         returnback_button = customtkinter.CTkButton(self.app,text="Back to Main Menu", fg_color="#06402B", width=800, height=30,command=self.returnback)
         returnback_button.place(x=520, y=740)

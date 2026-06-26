@@ -251,7 +251,7 @@ class StockMarketApp:
             self.currentshares(stock)
 
         self.status = customtkinter.CTkLabel(self.app, text="")
-        self.status.grid(row=2, column=0, columnspan=len(self.stocks), pady=10)
+        self.status.grid(row=1, column=0, columnspan=len(self.stocks), pady=10)
         returnback_button = customtkinter.CTkButton(self.app,text="Back to Main Menu", fg_color="#06402B", width=1500, height=30,command=self.returnback)
-        returnback_button.grid(row=1, column=0, columnspan=5, padx=10)
+        returnback_button.grid(row=2, column=0, columnspan=5, padx=10)
         self.update_balance()

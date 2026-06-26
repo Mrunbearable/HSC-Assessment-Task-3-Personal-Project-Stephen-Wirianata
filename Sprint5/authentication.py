@@ -91,10 +91,10 @@ class AuthenticationSystem:
         title = customtkinter.CTkLabel(self.app, text="SmartInvestments Login",text_color="#06402B", font=("Bahnschrift", 60))
         title.pack(pady=20)
 
-        customtkinter.CTkLabel(self.app, text="Enter Username").pack(pady=5)
+        customtkinter.CTkLabel(self.app, font=("Bahnschrift", 20), text="Enter Username").pack(pady=5)
         self.user_entry = customtkinter.CTkEntry(self.app, width=300)
         self.user_entry.pack(pady=10)
-        customtkinter.CTkLabel(self.app, text="Enter Password").pack(pady=5)
+        customtkinter.CTkLabel(self.app, font=("Bahnschrift", 20), text="Enter Password").pack(pady=5)
         self.password_entry = customtkinter.CTkEntry(self.app, width=300, show="*")
         self.password_entry.pack(pady=10)
         btn = customtkinter.CTkFrame(self.app, fg_color="transparent")
