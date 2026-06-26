@@ -24,7 +24,7 @@ class Investment:
         self.compounded = True
 
     # A function to move the progress bar
-    # Important to manipulat the feeling of a real COD investment
+    # Important to manipulate the feeling of a real COD investment
     def progress(self):
         total_seconds = self.years * 60
         elapsed = (datetime.now() - self.start).total_seconds()
