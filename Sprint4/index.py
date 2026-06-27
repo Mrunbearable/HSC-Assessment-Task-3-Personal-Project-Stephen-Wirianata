@@ -23,8 +23,7 @@ class Investment:
         self.rate_of_return = 0
         self.years = 0
 
-#The class for the index fund app
-#Connect user interfaces through controller    
+#The class for the index fund app is created
 class IndexApp:
     def __init__(self, controller):
         self.controller = controller

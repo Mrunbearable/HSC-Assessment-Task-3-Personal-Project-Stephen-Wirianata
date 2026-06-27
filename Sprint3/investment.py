@@ -1,7 +1,7 @@
 # This is introduction of the 
 # Imports customtkinter for GUI, allowing users to interact with the app in a more user-friendly way, making it easier to manage their investments and view their portfolio.
 # Imports datetime for handling date and time, important for history updates
-# Imports partial from functools for updating map in menu
+# Imports partial from functools to automatically remember inputs so it becomes easier to manipulate later
 import customtkinter
 from datetime import datetime
 from functools import partial

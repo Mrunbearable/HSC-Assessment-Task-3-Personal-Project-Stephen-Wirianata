@@ -81,7 +81,7 @@ class SavingsApp:
         balance = sum(inv.amount for inv in self.controller.savings_portfolio)
         self.balance_label.configure(text=f"Savings: ${balance:.2f}")
 
-    # A function to return to main menu, destorying widgets
+    # A function to return to main menu, destroying widgets
     def returnback(self):
         for widget in self.app.winfo_children():
             widget.destroy()

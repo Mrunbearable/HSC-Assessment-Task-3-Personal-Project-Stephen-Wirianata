@@ -1,4 +1,4 @@
-# The stock interface perfroms very similarly to the index fund but with more indivdidual graphs and information, utlises the ALPHA vantage api and formatting to get price data and create graph
+# The stock interface performs very similarly to the index fund but with more indivdidual graphs and information, utlises the ALPHA vantage api and formatting to get price data and create graph
 #Import CustomTkinter for GUI
 #Import request to pull data from API   
 #Import pandas to convert data into usable objects

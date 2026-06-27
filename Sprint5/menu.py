@@ -1,8 +1,13 @@
+#The is the final menu, showing graph of current user, account balance of current user and connects different investment oppurtunities
+#Imports customtkinter for GUI
+#Imports datetime to show date in top right corner and update graph
+#Imports matplotlib to create and update graph
 import customtkinter
 from datetime import datetime
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
+# Creates the investment class
 class InvestmentMenu:
     def __init__(self, controller):
         self.controller = controller
@@ -10,14 +15,19 @@ class InvestmentMenu:
         self.active = True
         self.menuGui()
 
+    #A function to show graph, ensures it doesn't show graph is history doesn't exist
     def show_graph(self, frame):
+        #Graphs the user_id, to identify current user, important for ensuring right outputs
         user_id = self.controller.current_user_token
 
+        #If no users in history, exit function
+        #Returns the last ten history updates in graph
         if not self.controller.users_data[user_id]["history"]:
             return
-
+        
         history = self.controller.users_data[user_id]["history"][-10:]
 
+        #Creates the graph, dimensions and labels
         dates = [d for d, v in history]
         values = [v for d, v in history]
 
@@ -34,10 +44,12 @@ class InvestmentMenu:
         canvas.draw()
         canvas.get_tk_widget().pack(fill="both", expand=True)
 
+    #Updates the balance of current user
     def update_balance(self):
         balance = self.controller.totalaccountbalance()
         self.accountbalance.configure(text=f"Account Balance: ${balance:,.2f}")
 
+    #calculates and updates the information of current user
     def update_breakdown(self):
         savings = sum(inv.amount for inv in self.controller.savings_portfolio)
         cod = sum(inv.amount for inv in self.controller.cod_portfolio)
@@ -50,6 +62,8 @@ class InvestmentMenu:
         self.indexfund.configure(text=f"Index Fund: ${indexfund:,.2f}")
         self.stocks.configure(text=f"Stock Market: ${stocks:,.2f}")
 
+    #Refresh the balance of user every few seconds
+    #Runs update_breakdown() and update_balance() functions
     def balancerefresh(self):
         if not self.active or not self.controller.running:
             return
@@ -58,10 +72,12 @@ class InvestmentMenu:
         if self.active and self.controller.running:
             self.app.after(10000, self.balancerefresh)
 
+    #Displays the username
     def display_userinfo(self):
         username = self.controller.current_user
         self.username.configure(text=f"Username: {username}")
 
+    #Refresh the graph of portfolio growth frequently
     def graphrefresh(self):
         if not self.active or not self.controller.running:
             return
@@ -73,13 +89,16 @@ class InvestmentMenu:
 
         if self.active and self.controller.running:
             self.app.after(300000, self.graphrefresh)
-
+    
+    # A function to logout from application, returning user to authentication interface
     def logout(self):
         for widget in self.app.winfo_children():
             widget.destroy()
         self.controller.operate_authenticationsystem()
-
+    
+    #Creates the Main Menu GUI, this is the completed one with connection to every functionality and has more account information
     def menuGui(self):
+        #Constructs the date and frames
         self.controller.clear_window()
         date = datetime.now().strftime("%A, %d %B %Y")
         self.time = customtkinter.CTkLabel(self.app, text=date,font=("BahnSchrift", 18))
@@ -94,7 +113,7 @@ class InvestmentMenu:
         right_frame.grid(row=1, column=1, padx=(10, 20), pady=20, sticky="nsew")
         right_frame.grid_columnconfigure(0, weight=1)
         right_frame.grid_propagate(False)
-
+        #Constructs the labels, buttons and entries
         customtkinter.CTkLabel(self.app, font=("Bahnschrift", 45), text_color="#06402B", text="Smart Investments").grid(row=0, column=0, padx=20, pady=5, sticky="w")
 
         saving_button = customtkinter.CTkButton(right_frame,text="High Yield Savings Account", fg_color="#06402B", height=100,  command=self.controller.operate_savings)
@@ -130,6 +149,7 @@ class InvestmentMenu:
         self.graph_frame = customtkinter.CTkFrame(self.left_frame)
         self.graph_frame.grid(row=1, column=0, padx=20, pady=20, sticky="nsew")
 
+        #Runs neccesarry function for program to operate properly
         self.display_userinfo()
         self.balancerefresh()
         self.graphrefresh()

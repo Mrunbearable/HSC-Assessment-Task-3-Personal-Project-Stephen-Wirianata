@@ -1,7 +1,7 @@
-#This is where the Certificate of Deposit (COD) class is created, it purpose is to replicate a COD account in a bank
+#This is where the Certificate of Deposit (COD) interface is created, it purpose is to replicate a COD account in a bank
 #Import CustomTkinter for GUI 
 #Import datetime to time and update history
-#Import partial to update graphs and progress bars in real time
+#Import partial to update progress bars in real time, and to automatically remember inputs so it becomes easier to manipulate later
 import customtkinter
 from datetime import datetime
 from functools import partial
@@ -58,7 +58,7 @@ class CertificateofDepositApp:
             return
         
         #Add specific data to specfic investment and adds investment to portfolio
-        #Updates the history of accountballance
+        #Updates the history of accountbalance
         new_investment = Investment(name, amount, self.selected_years)
         self.portfolio.append(new_investment)
         self.controller.history.append((datetime.now(), self.controller.totalaccountbalance()))
@@ -94,7 +94,7 @@ class CertificateofDepositApp:
             bar.set(investment.progress())
             bar.pack(fill="x", padx=10, pady=(0, 8))
 
-    #A function on calulate final reutrn based on feedback
+    #A function on calulate final return based on input, creates a new returns list
     def calculate_returns(self):
         returns = []
         for investment in self.portfolio:
@@ -138,6 +138,7 @@ class CertificateofDepositApp:
             widget.destroy()
         self.controller.operate_menu()
 
+    #Creates the COD GUI, the sprint before this all contain at least one version of the COD GUI
     def menuGui(self):
         # Creates neccessary left frames
         left_frame = customtkinter.CTkFrame(self.app, fg_color="#D2C3A9", width=600, height=750)
@@ -193,7 +194,7 @@ class CertificateofDepositApp:
         removeinvestment_button = customtkinter.CTkButton(left_frame,text="Remove Investment", fg_color="#06402B", command=self.remove_investment)
         removeinvestment_button.grid(row=16, column=0, padx=20, pady=10, sticky="ew")
 
-        #Display frame form portfolio
+        #Display frame from portfolio
         self.display_frame = customtkinter.CTkFrame(righttop_frame)
         self.display_frame.grid(row=0,column=0,padx=10,pady=10,sticky="nsew")
         self.view_portfolio()
@@ -209,6 +210,7 @@ class CertificateofDepositApp:
 
         returnback_button = customtkinter.CTkButton(self.app,text="Back to Main Menu", fg_color="#06402B", width=800, height=30,command=self.returnback)
         returnback_button.place(x=640, y=735)
+        # runs verify COD
         self.verify_cod()
 
         

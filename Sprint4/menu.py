@@ -7,7 +7,7 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-# A investmenu class to seamlessly switch between investent interfaces
+# A investmenu class to seamlessly switch between investment interfaces
 class InvestmentMenu:
     def __init__(self, controller):
         self.controller = controller

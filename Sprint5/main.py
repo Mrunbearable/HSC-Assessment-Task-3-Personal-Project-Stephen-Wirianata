@@ -1,3 +1,9 @@
+#This is the final main menu, to control all the interface and create important functions
+#Import customtkinter for GUI
+#Import requests for api data pulls
+#Import and datetime to control program updates
+#Import menu, cod, saving, index, stock, authentication, leaderboard to connect user interfaces
+#Import userdata to control seperate user accounts
 import customtkinter
 import requests
 import time
@@ -11,10 +17,13 @@ from authentication import AuthenticationSystem
 from leaderboard import LeaderboardApp
 from userdata import load_users, save_users
 
+#Information for API KEY
 TWELVEDATA_API_KEY = "91002cdaa44445d99142fd352da2e0dc"
 TWELVEDATA_BASE_URL = "https://api.twelvedata.com"
 PRICE_CACHE_SECONDS = 60
 
+# A class for smartinvestment app, creating dimensions and aesthetics for program interface, creating seperate portfolios, sets starting money,
+#Error handling variables to ensure programs runs successfully
 class SmartInvestmentApp:
     def __init__(self): 
         self.app = customtkinter.CTk()
@@ -40,35 +49,40 @@ class SmartInvestmentApp:
         self.app.after(10000, self.interestautomation)
         self.app.after(300000, self.frequenthistoryrefresh)
 
+    #A function to ensure the program doesn't crash when closed
     def on_close(self):
         self.running = False
         if self.current_menu is not None:
             self.current_menu.active = False
         self.app.quit()
 
+    # A function to get the lastest price of the API, uses try and except for data
     def get_price(self, symbol):
         now = time.time()
         cached = self.price_cache.get(symbol)
         if cached is not None and (now - cached["time"]) < PRICE_CACHE_SECONDS:
             return cached["price"]
-
+        # trys to get data of specfic stock
         try:
             response = requests.get(f"{TWELVEDATA_BASE_URL}/price", params={"symbol": symbol, "apikey": TWELVEDATA_API_KEY}, timeout=10)
             data = response.json()
             price = float(data["price"])
+        # otherwise it will show the error in console terminal
         except Exception as e:
             print(f"[get_price] Exception fetching {symbol}: {e}")
             return cached["price"] if cached is not None else 0.0
-
+        #Returns the price and time
         self.price_cache[symbol] = {"price": price, "time": now}
         return price
-
+    
+    # Gets the value of index fund
     def indexfund_value(self):
         shares = sum(inv.amount for inv in self.indexfund_portfolio if inv.name == INDEX_SYMBOL)
         if shares <= 0:
             return 0.0
         return shares * self.get_price(INDEX_SYMBOL)
 
+    # Gets the value of all stocks in stock market
     def stockmarket_value(self):
         total = 0.0
         for ticker in STOCK_TICKERS:
@@ -76,7 +90,9 @@ class SmartInvestmentApp:
             if shares > 0:
                 total += shares * self.get_price(ticker)
         return total
-
+    
+    # A function to apply interest, used in savings and cod
+    # Updates data and history for each user
     def apply_interest(self):
         if not self.current_user_token:
             return
@@ -94,22 +110,19 @@ class SmartInvestmentApp:
         self.users_data[self.current_user_token]["history"].append((datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.totalaccountbalance()))
         save_users(self.users_data)
 
+    #refreshs the history very frequently for the user
     def frequenthistoryrefresh(self):
         if not self.running:
             return
 
         if self.current_user_token:
-            self.users_data[self.current_user_token]["history"].append(
-                (
-                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    self.totalaccountbalance()
-                )
-            )
+            self.users_data[self.current_user_token]["history"].append((datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.totalaccountbalance()))
             save_users(self.users_data)
 
         if self.running:
             self.app.after(300000, self.frequenthistoryrefresh)
 
+    #frequently applies interest automatically for the user
     def interestautomation(self):
         if not self.running:
             return
@@ -117,6 +130,7 @@ class SmartInvestmentApp:
         if self.running:
             self.app.after(10000, self.interestautomation)
 
+    #Ffinds the total account balance based of sum of all investment portfolios
     def totalaccountbalance(self):
         savings = sum(inv.amount for inv in self.savings_portfolio)
         cod = sum(inv.amount for inv in self.cod_portfolio)
@@ -124,7 +138,8 @@ class SmartInvestmentApp:
         stockmarket = self.stockmarket_value()
 
         return self.mainportfolio + savings + cod + indexfund + stockmarket
-
+    
+    #Frequently refresh data and saves data of user so totalccount balance can be updated
     def frequentdatarefresh(self):
         if not self.current_user_token:
             return
@@ -146,10 +161,12 @@ class SmartInvestmentApp:
         user["mainportfolio"] = self.mainportfolio
         save_users(self.users_data)
 
+    # A function to connect to database by frequently refresh data and saving it to current user
     def connectdatabase(self):
         self.frequentdatarefresh()
         save_users(self.users_data)
-    
+
+    # A function used to clear the current window
     def clear_window(self):
         if self.current_menu is not None:
             self.current_menu.active = False
@@ -157,38 +174,46 @@ class SmartInvestmentApp:
         for widget in self.app.winfo_children():
             widget.destroy()
 
+    #a function to run authentication interface
     def operate_authenticationsystem(self):
         self.clear_window()
         AuthenticationSystem(self)
 
+    # a function to run leaderboard interface
     def operate_leaderboard(self):
         self.clear_window()
         LeaderboardApp(self)
 
+    # a function to run cod interface
     def operate_cod(self):
         self.clear_window()
         CertificateofDepositApp(self)
 
+    # a function to run high yield saving account interface
     def operate_savings(self):
         self.clear_window()
         SavingsApp(self)
 
+    # a function to run index fund interface
     def operate_index(self):
         self.clear_window()
         IndexApp(self)
 
+    # a function to run stock market interface
     def operate_stock(self):
         self.clear_window()
         StockMarketApp(self)
 
+    # a function to run the main menu interface
     def operate_menu(self):
         self.clear_window()
         self.current_menu = InvestmentMenu(self)
-
+    
+    # a function to start program
     def start(self):
         self.app.mainloop()
 
-
+# if smart investment app class exist, run program
 if __name__ == "__main__":
     app = SmartInvestmentApp()
     app.start()
