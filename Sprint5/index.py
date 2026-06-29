@@ -12,11 +12,16 @@ from datetime import datetime
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 from userdata import save_users
+import os
+from dotenv import load_dotenv
 
 #API Key and Index fund Symbol ids are defined
 #Note the API has changed from alpha vantage to twelve data
+#load_dotenv() reads the .env file in the project folder and loads its values as environment variables
+#The key itself is NOT written in this file - it's read from the environment so it isn't exposed in plaintext source code
+load_dotenv()
 SYMBOL = "VOO"
-TWELVEDATA_API_KEY = "91002cdaa44445d99142fd352da2e0dc"
+TWELVEDATA_API_KEY = os.environ.get("TWELVEDATA_API_KEY")
 TWELVEDATA_BASE_URL = "https://api.twelvedata.com"
 
 #Creates an investment class and variables
@@ -112,7 +117,14 @@ class IndexApp:
 
         #Check latest closing price and ask user to input shares
         price = float(data["4. close"].iloc[-1])
-        shares = int(self.indexentry.get())
+
+        #Try to convert the shares entry box text to a whole number. If the user typed letters
+        #or left it blank, this catches the error instead of crashing the whole program
+        try:
+            shares = int(self.indexentry.get())
+        except ValueError:
+            self.status.configure(text="Enter valid shares.", text_color="red")
+            return
 
         #if shares are less than 0, it will print error message in terminal 
         if shares <= 0:
@@ -147,7 +159,15 @@ class IndexApp:
         #obtain closing price of share and ask user how many shares they want to sell
         #gathers total amount of money in indexfund portfolio
         price = float(data["4. close"].iloc[-1])
-        sell_shares = int(self.indexentry.get())
+
+        #Try to convert the shares entry box text to a whole number. If the user typed letters
+        #or left it blank, this catches the error instead of crashing the whole program
+        try:
+            sell_shares = int(self.indexentry.get())
+        except ValueError:
+            self.status.configure(text="Enter valid shares.", text_color="red")
+            return
+
         total = sum(inv.amount for inv in self.controller.indexfund_portfolio)
 
         #If not enough shares/ or no shares, it will print error message in terminal

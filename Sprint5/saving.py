@@ -30,7 +30,13 @@ class SavingsApp:
 
     # A function to deposit money into the high yield saving account, user inputs a selected amount of money
     def deposit(self):
-        deposit = float(self.amount_entry.get())
+        #Try to convert the entry box text to a number. If the user typed letters or left it
+        #blank, this catches the error instead of crashing the whole program
+        try:
+            deposit = float(self.amount_entry.get())
+        except ValueError:
+            self.status.configure(text="Enter a valid amount.", text_color="red")
+            return
 
         #Error message if not enough of cash to deposit into savings from main portfolio
         if deposit > self.controller.mainportfolio:
@@ -49,7 +55,14 @@ class SavingsApp:
 
     # A function to withdraw money, user inputs money to withdraw
     def withdraw(self):
-        withdraw = float(self.amount_entry.get())
+        #Try to convert the entry box text to a number. If the user typed letters or left it
+        #blank, this catches the error instead of crashing the whole program
+        try:
+            withdraw = float(self.amount_entry.get())
+        except ValueError:
+            self.status.configure(text="Enter a valid amount.", text_color="red")
+            return
+
         total = sum(inv.amount for inv in self.controller.savings_portfolio)
 
         # Error message if money wanting to withdraw is bigger than total money in savings portfolio

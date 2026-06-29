@@ -15,13 +15,18 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 from functools import partial
 from userdata import save_users
+import os
+from dotenv import load_dotenv
 
 #API Key and stock market Symbols ids are defined
 #Note the API has changed
 #ALSO implement caching to stop crashing errors
+#load_dotenv() reads the .env file in the project folder and loads its values as environment variables
+#The key itself is NOT written in this file - it's read from the environment instead
+load_dotenv()
 TICKERS = ["NVDA", "ALAB", "ORCL", "GOOGL", "SPCX"]
 CACHELIMITSECONDS = 60
-TWELVEDATA_API_KEY = "91002cdaa44445d99142fd352da2e0dc"
+TWELVEDATA_API_KEY = os.environ.get("TWELVEDATA_API_KEY")
 TWELVEDATA_BASE_URL = "https://api.twelvedata.com"
 
 #Creates the invesment class and variables
@@ -145,7 +150,14 @@ class StockMarketApp:
 
         #Get user stock input
         index = self.stocks.index(stock)
-        buyingshares = int(self.entry[index].get())
+
+        #Try to convert the shares entry box text to a whole number. If the user typed letters
+        #or left it blank, this catches the error instead of crashing the whole program
+        try:
+            buyingshares = int(self.entry[index].get())
+        except ValueError:
+            self.status.configure(text="Enter a valid number of shares.", text_color="red")
+            return
 
         #if shares are less than 0, it will print error message in terminal 
         if buyingshares <= 0:
@@ -183,7 +195,15 @@ class StockMarketApp:
 
         #gather total amount of shares in stockmarket portfolio for the specific stock/ticker
         index = self.stocks.index(stock)
-        sellingshares = int(self.entry[index].get())
+
+        #Try to convert the shares entry box text to a whole number. If the user typed letters
+        #or left it blank, this catches the error instead of crashing the whole program
+        try:
+            sellingshares = int(self.entry[index].get())
+        except ValueError:
+            self.status.configure(text="Enter a valid number of shares.", text_color="red")
+            return
+
         total_shares = sum(inv.amount for inv in self.controller.stockmarket_portfolio if inv.name == stock)
 
         #If not enough shares/ or no shares, it will print error message in terminal
@@ -242,22 +262,33 @@ class StockMarketApp:
     # A function to return back to main menu, destroying widgets
     def returnback(self):
         self.active = False
+        self.app.grid_rowconfigure(0, weight=0)
+        self.app.grid_columnconfigure(0, weight=0)
         for widget in self.app.winfo_children():
             widget.destroy()
         self.controller.operate_menu()
 
     # A function to create stock market GUI
     def menuGui(self):
-        for i in range(len(self.stocks)):
-            self.app.grid_columnconfigure(i, weight=1)
-
+        # Creates a single container frame so column/row weight configuration
+        # is scoped to this screen only, instead of being set directly on
+        # self.app (which would permanently affect every other screen's layout)
+        container = customtkinter.CTkFrame(self.app, fg_color="transparent")
+        container.grid(row=0, column=0, rowspan=3, sticky="nsew")
         self.app.grid_rowconfigure(0, weight=1)
-        self.balance = customtkinter.CTkLabel(self.app, text="Portfolio Value: $0.00", font=("Bahnschrift", 12))
+        self.app.grid_columnconfigure(0, weight=1)
+        self.container = container
+
+        for i in range(len(self.stocks)):
+            container.grid_columnconfigure(i, weight=1)
+
+        container.grid_rowconfigure(0, weight=1)
+        self.balance = customtkinter.CTkLabel(container, text="Portfolio Value: $0.00", font=("Bahnschrift", 12))
         self.balance.grid(row=1, column=0, columnspan=len(self.stocks), pady=10)
 
         # For each stock, creates frame, labels, entries, buttons and graphs
         for i, stock in enumerate(self.stocks):
-            stockframe = customtkinter.CTkFrame(self.app, fg_color="#D2C3A9", width=600, height=750)
+            stockframe = customtkinter.CTkFrame(container, fg_color="#D2C3A9", width=600, height=750)
             stockframe.grid(row=0, column=i, rowspan=2, padx=(20, 10), pady=20, sticky="nsew")
             stockframe.grid_columnconfigure(0, weight=1)
             stockframe.grid_columnconfigure(1, weight=1)
@@ -292,9 +323,9 @@ class StockMarketApp:
             self.update_graph(stockframe, stock, i)
             self.currentshares(stock)
 
-        self.status = customtkinter.CTkLabel(self.app, text="")
+        self.status = customtkinter.CTkLabel(container, text="")
         self.status.grid(row=1, column=0, columnspan=len(self.stocks), pady=10)
-        returnback_button = customtkinter.CTkButton(self.app,text="Back to Main Menu", fg_color="#06402B", width=1500, height=30,command=self.returnback)
+        returnback_button = customtkinter.CTkButton(container,text="Back to Main Menu", fg_color="#06402B", width=1500, height=30,command=self.returnback)
         returnback_button.grid(row=2, column=0, columnspan=5, padx=10)
         #Frequently updating balance
         self.update_balance()

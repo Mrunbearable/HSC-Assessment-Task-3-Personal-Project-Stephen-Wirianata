@@ -56,7 +56,15 @@ class CertificateofDepositApp:
     #Check if the investment transfer is sucessful
     def add_investment(self):
         name = self.entry_name.get()
-        amount = float(self.entry_amount.get())
+
+        #Try to convert the amount entry to a number. If the user typed letters, left it
+        #blank, or typed something that isn't a valid number, this catches the error
+        #instead of crashing the whole program
+        try:
+            amount = float(self.entry_amount.get())
+        except ValueError:
+            self.returns.configure(text="Enter a valid amount")
+            return
 
         transfersuccess = self.deposit(amount)
 

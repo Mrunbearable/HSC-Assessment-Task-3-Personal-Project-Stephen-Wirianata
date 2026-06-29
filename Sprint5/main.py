@@ -16,9 +16,14 @@ from stock import StockMarketApp, TICKERS as STOCK_TICKERS
 from authentication import AuthenticationSystem
 from leaderboard import LeaderboardApp
 from userdata import load_users, save_users
+import os
+from dotenv import load_dotenv
 
 #Information for API KEY
-TWELVEDATA_API_KEY = "91002cdaa44445d99142fd352da2e0dc"
+#load_dotenv() reads the .env file in the project folder and loads its values as environment variables
+#The key itself is NOT written in this file - it's read from the environment instead
+load_dotenv()
+TWELVEDATA_API_KEY = os.environ.get("TWELVEDATA_API_KEY")
 TWELVEDATA_BASE_URL = "https://api.twelvedata.com"
 PRICE_CACHE_SECONDS = 60
 
